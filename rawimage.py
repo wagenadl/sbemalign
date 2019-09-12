@@ -6,24 +6,31 @@ import runinfo
 import urllib.request
 import re
 
-def loadraw(r, m, s):
-    '''LOADRAW - Load raw image
-    img = LOADRAW(r, m, s) loads the raw image for given run/montage/slice
-    as a 16-bit 17100x17100-pixel image.'''
+def rawtile(r, m, s):
+    '''RAWTILE - Filename for raw image
+    fn = RAWTILE(r, m, s) returns the path of the raw image for given
+    run/montage/slice.
+    img = LOADIMAGE(RAWTILE(r, m, s)) returns the actual image as a
+    16-bit 17100x17100-pixel image.'''
     root = runinfo.rawroot
-    ifn = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
-    ifn = ifn % (root, r, m, r, s)
-    img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-    return img
+    pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
+    return pat % (root, r, m, r, s)
+
+def scaledtile(r, m, s, q):
+    '''SCALEDTILE - Filename for scaled raw image
+    fn = SCALEDTILE(r, m, s, q) returns the path of the scaled raw image
+    run/montage/slice at scale Q.'''
+    root = runinfo.sclroot
+    pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
+    return pat % (root, q, r, m, s)
 
 def loadimage(url):
     '''LOADIMAGE - Download an image from anywhere
     img = LOADIMAGE(url) downloads an image from anywhere.
     Result is grayscale. Bit depth is as from source.
-    For convenience, URL may also be a local file name (even without
-    file:// prefix).
+    URL may also be a local file name (even without file:// prefix).
     For unknown reasons, opencv's imdecode is slower than imread, so
-    file:// is much faster than url:// even if the file system is a
+    file:// is much faster than http://, even if the file system is a
     remote sshfs mount.'''
     if url.startswith('file://'):
         url = url[7:]
@@ -82,7 +89,19 @@ def iscale(img, n):
     im = ISCALE(img, n) downscales the image IMG by a factor N in both
     x- and y-directions using "area" interpolation.'''
     y,x = img.shape
-    return cv2.resize(img, (y//n,x//n), interpolation=cv2.INTER_AREA)
+    Ky = y//n
+    Kx = x//n
+    if n*Ky<y or n*Kx<x:
+        img = img[0:n*Ky,0:n*Kx]
+    return cv2.resize(img, (Ky, Kx), interpolation=cv2.INTER_AREA)
 
-
-
+def saveimage(img, ofn, qual=None):
+    '''SAVEIMAGE - Save an image to disk
+    SAVEIMAGE(img, fn) saves the image to disk.
+    Optional argument QUAL (0..100) specifies quality for
+    jpeg output.
+    Unlike LOADIMAGE, SAVEIMAGE can only save to local file, not to URL.'''
+    if qual is None:
+        cv2.imwrite(ofn, img)
+    else:
+        cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
