@@ -6,6 +6,7 @@ import rawimage
 from pathlib import Path
 
 def produceq25(r, m, s, ofn=None):
+    print('Working on Q25 run %i montage %i slice %i' % (r,m,s)) 
     ifn = rawimage.rawtile(r, m, s)
     img = rawimage.loadimage(ifn)
     img = rawimage.iscale(img, 5)
@@ -15,6 +16,7 @@ def produceq25(r, m, s, ofn=None):
     Y,X = img.shape
     R = Y//5
     ofntmpl = Path(rawimage.scaledtile(r, m, s, 5))
+    copro.ensuredirfor(str(ofntmpl))
     for x in range(5):
         for y in range(5):
             imti = img[R*y:R*(y+1), R*x:R*(x+1)]

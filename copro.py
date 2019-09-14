@@ -17,7 +17,7 @@ def ensuredirfor(fn):
     ENSUREDIRFOR(fn) makes sure that all parent directories of FN exist.'''
     d = Path(fn).parent
     if not d.exists():
-        d.mkdir(parents=True)
+        d.mkdir(parents=True, exist_ok=True)
 
 def openlocked(fn):
     '''OPENLOCKED - Open a file and lock it
