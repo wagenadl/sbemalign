@@ -2,7 +2,7 @@
 
 import numpy as np
 import cv2
-import runinfo
+import config
 import urllib.request
 import re
 
@@ -12,7 +12,7 @@ def rawtile(r, m, s):
     run/montage/slice.
     img = LOADIMAGE(RAWTILE(r, m, s)) returns the actual image as a
     16-bit 17100x17100-pixel image.'''
-    root = runinfo.rawroot
+    root = config.rawroot
     pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
     return pat % (root, r, m, r, s)
 
@@ -20,7 +20,7 @@ def scaledtile(r, m, s, q):
     '''SCALEDTILE - Filename for scaled raw image
     fn = SCALEDTILE(r, m, s, q) returns the path of the scaled raw image
     run/montage/slice at scale Q.'''
-    root = runinfo.sclroot
+    root = config.sclroot
     pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
     return pat % (root, q, r, m, s)
 
