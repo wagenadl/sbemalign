@@ -17,7 +17,11 @@ def worker():
     c = produceq25.ProduceQ25()
     while True:
         rms = q.get()
-        c.ensure(rms)
+        try:
+          c.ensure(rms)
+        except Exception as e:
+          print(e)
+          print('FAILED TO PRODUCE', rms)
         q.task_done()
 
 nthr = 4
@@ -27,37 +31,55 @@ for n in range(nthr):
     t.start()
     threads.append(t)
 
-def producesomeq25(r=None, m=None, s=None):
+def producesomeq25(r=None, m=None):
     if r is None:
         base = Path(rawimage.scaledtile(1,1,1,25)).parent.parent.parent
         if base.joinpath('complete').exists():
-            return
+            return True
+        ok = True
         for r in range(ri.runCount()):
-            producesomeq25(r+1, m, s)
+            if not producesomeq25(r+1, m):
+                ok = False
         q.join()
-        base.joinpath('complete').touch()
+        if ok:
+            base.joinpath('complete').touch()
+        return ok
     elif m is None:
         print('Q25 - Working on run %i' % r)
         base = Path(rawimage.scaledtile(r,1,1,25)).parent.parent
         if base.joinpath('complete').exists():
-            return
+            return True
+        ok = True
         for m in range(ri.montageCount(r)):
-            producesomeq25(r, m, s)
+            if not producesomeq25(r, m): 
+                ok = False
         q.join()
-        base.joinpath('complete').touch()
-    elif s is None:
+        if ok:
+            base.joinpath('complete').touch()
+        return ok
+    else:
         print('Q25 - Working on run %i montage %i' % (r, m))
         base = Path(rawimage.scaledtile(r,m,1,25)).parent
         if base.joinpath('complete').exists():
-            return
+            return True
+        mustcheck = False
         for s in range(ri.sliceCount(r)):
-            producesomeq25(r, m, s)
+            if not c0.check((r,m,s)):
+                print('Q25 - Queuing run %i montage %i slice %i' % (r, m, s))
+                q.put((r,m,s))
+                mustcheck = True
         q.join()
-        base.joinpath('complete').touch()
-    else:
-        if not c0.check((r,m,s)):
-            print('Q25 - Queuing run %i montage %i slice %i' % (r, m, s))
-            q.put((r,m,s))
+        if mustcheck:
+            ok = True
+            for s in range(ri.sliceCount(r)):
+                if not c0.check((r,m,s)):
+                    ok = False
+                    break
+        else:
+           ok = True
+        if ok:
+            base.joinpath('complete').touch()
+        return ok
 
 producesomeq25()
 

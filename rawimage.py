@@ -13,7 +13,10 @@ def rawtile(r, m, s):
     img = LOADIMAGE(RAWTILE(r, m, s)) returns the actual image as a
     16-bit 17100x17100-pixel image.'''
     root = config.rawroot
-    pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
+    if r==11:
+        pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_OnPoint_%04i.tif'
+    else:
+        pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
     return pat % (root, r, m, r, s)
 
 def scaledtile(r, m, s, q):
