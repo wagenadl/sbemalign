@@ -18,9 +18,9 @@ def produceq25(r, m, s, ofn=None):
     for x in range(5):
         for y in range(5):
             imti = img[R*y:R*(y+1), R*x:R*(x+1)]
-            ofnti = ofntmpl.with_suffix('.%i%i.tif' % (x, y))
+            ofnti = str(ofntmpl.with_suffix('.%i%i.tif' % (x, y)))
             rawimage.saveimage(imti, ofnti)
-    Path(ofntmpl.with_suffix('.complete')).touch()
+    ofntmpl.with_suffix('.complete').touch()
 
     img = rawimage.iscale(img, 5)
     if ofn is None:
