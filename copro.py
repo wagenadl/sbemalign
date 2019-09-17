@@ -15,9 +15,9 @@ def fileexists(fn):
 def ensuredirfor(fn):
     '''ENSUREDIRFOR - Ensure that directory exists for file to be saved
     ENSUREDIRFOR(fn) makes sure that all parent directories of FN exist.'''
-    d = Path(fn).parent()
+    d = Path(fn).parent
     if not d.exists():
-        d.mkdir(parents=True)
+        d.mkdir(parents=True, exist_ok=True)
 
 def openlocked(fn):
     '''OPENLOCKED - Open a file and lock it
@@ -25,6 +25,7 @@ def openlocked(fn):
     exclusive use. If FN did not exist, it is created.
     All the usual warnings about Linux file locking apply. Mainly intended
     for internal use on temporary lock files.'''
+    ensuredirfor(fn)
     fd = open(fn, 'a+')
     fcntl.flock(fd, fcntl.LOCK_EX)
     return fd
