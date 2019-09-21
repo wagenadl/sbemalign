@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# This loads the data from the beta alignment into the db
+'''This loads the data from the beta alignment into the db'''
 
 import psycopg2
 import time
