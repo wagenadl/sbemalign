@@ -27,7 +27,7 @@ def scaledtile(r, m, s, q):
     if q==1:
         return rawtile(r, m, s)
     root = config.sclroot
-    pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
+    pat = '%s/scaled/Q%i/R%i/M%i/S%i.ppm'
     return pat % (root, q, r, m, s)
 
 def loadimage(url):
