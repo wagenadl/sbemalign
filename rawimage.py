@@ -22,7 +22,10 @@ def rawtile(r, m, s):
 def scaledtile(r, m, s, q):
     '''SCALEDTILE - Filename for scaled raw image
     fn = SCALEDTILE(r, m, s, q) returns the path of the scaled raw image
-    run/montage/slice at scale Q.'''
+    run/montage/slice at scale Q.
+    If Q is 1, returns RAWTILE filename.'''
+    if q==1:
+        return rawtile(r, m, s)
     root = config.sclroot
     pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
     return pat % (root, q, r, m, s)
