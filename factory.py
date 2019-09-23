@@ -16,11 +16,11 @@ class Factory:
                 tsk = self.qu.get()
                 if tsk is None:
                     self.qu.task_done()
-                    print('Worker done')
+                    #print('Worker done')
                     return
                 try:
-                    print('Retrieved task', tsk)
-                    self.produce(tsk)
+                    #print('Retrieved task', tsk)
+                    self.produce(*tsk)
                 except Exception  as e:
                     ei = sys.exc_info()
                     tb = ei[2]
@@ -36,12 +36,14 @@ class Factory:
             t = threading.Thread(target=wrkr)
             t.start()
             self.thr.append(t)
+
     def __enter__(self):
         while len(self.thr) < self.nthr:
             t = threading.Thread(target=wrkr)
             t.start()
             self.thr.append(t)
         return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         #print('Exit factory')
         if exc_type is not None:
@@ -63,14 +65,16 @@ class Factory:
             t.join()
         self.thr = []
 
-    def produce(self, tsk):
+    def produce(self, *tsk):
         '''Subclasses should override this to do the work.
         Signal failure by raising an exception.'''
-        pass
+        tsk = list(tsk)
+        foo = tsk.pop(0)
+        foo(*tsk)
 
-    def request(self, tsk):
+    def request(self, *tsk):
         '''Clients call this to add a task to the queue.'''
-        print('Scheduling', tsk)
+        #print('Scheduling', tsk)
         self.qu.put(tsk)
 
     def failures(self):
@@ -80,27 +84,49 @@ class Factory:
 if __name__ == '__main__':
     import time
 
-    # Define a subclass with an actual task
+    ################## Function based approach ##########################
+    def myfunc(a, b):
+        print(f'Working on adding {a} and {b}.')
+        time.sleep(.1)
+        c = a + b
+        print(f'Function says {a} plus {b} makes {c}.')
+        
+    # Scoping using a "with" statement ensures that all tasks are
+    # completed at the end of the block:
+    with Factory() as f:
+        for k in range(5):
+            for l in range(5):
+                f.request(myfunc, k, l)
+
+    ################### Class based approach ######################
     class MyFactory(Factory):
-        def produce(self, tsk):
-            print('Dummy producing', tsk)
-            time.sleep(.2*tsk) # This is a really easy task
-            if tsk==5:
-                # Just to show that failure is handled gracefully
-                raise Exception('Insomnia')
-            print('Done dummy producing', tsk)
+        def produce(self, a, b):
+            print(f'Working on adding {a} and {b}.')
+            time.sleep(.1)
+            c = a + b
+            print(f'Class says {a} plus {b} makes {c}.')
 
-    f = MyFactory()
-    with f:
-        # Scoping using a "with" statement ensures that all tasks are
-        # completed at the end of the block.
-        for k in range(10):
-            f.request(k)
+    with MyFactory() as f:
+        for k in range(5):
+            for l in range(5):
+                f.request(k, l)
+
+    #################### Capturing failures ######################
+    def failfunc(a, b):
+        print(f'Working on adding {a} and {b}.')
+        time.sleep(.1)
+        if a==1 and b==1:
+            raise Exception(f'I can never remember how to add {a} and {b}.')
+        c = a + b
+        print(f'Error-prone function says {a} plus {b} makes {c}.')
+    f1 = Factory()
+    with f1:
+        for k in range(5):
+            for l in range(5):
+                f1.request(failfunc, k, l)
     print('Failures:')
-    for k,v in f.failures().items():
+    for k,v in f1.failures().items():
         print(f'  {k}:', v[0])
-    # If you don't anticipate any failures, you could also simply do:
-    #   with MyFactory() as f:
-    #     for k in range(10):
-    #       f.request(k)
-
+            
+    # Of course, failures can be captured the same way in the class-based
+    # approach.
