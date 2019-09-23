@@ -96,6 +96,8 @@ def tryshift(fft_em2, uct, xc,yc, Ruct):
     
 def aligntile(uct, r, m, s):
     em = swiftir.loadImage(tilefn(r, m, s))
+    if em is None:
+        raise Exception('Cannot load tile %s' % tilefn(r,m,s))
     xc, yc = sel('''select xc, yc from betapos
     where r=%s and m=%s and s=%s''',
                  (r, m, s))[0]
@@ -115,10 +117,14 @@ def aligntile(uct, r, m, s):
     dy = 0
     first = True
     iter = 0
+    print(r,m,s)
     while first or (dx*dx + dy*dy > 2 and iter<5):
         (dx,dy,sx,sy,snr) = tryshift(fft_em2, uct, xc+cdx,yc+cdy, Ruct)
         cdx -= quctxy*dx
         cdy -= quctxy*dy
+        if np.abs(cdx)>5000 or np.abs(cdy)>5000:
+            print(f'Warning: failed to converge at R{r} M{m} S{s}')
+            return (0,0,0,0,0,0)
         csx = quctxy*sx
         csy = quctxy*sy
         csnr = snr
