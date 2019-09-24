@@ -32,7 +32,11 @@ def sel(sql, args=None):
         with db.cursor() as c:
             c.execute(sql, args)
             return c.fetchall()
-                
+
+nofail('drop table info')
+exe('create table info (X integer, Y integer, root text )')
+exe("insert into info (X, Y, root) values (17100, 17100, '/lsi2/dw/170428')")
+        
 nofail('drop table runs')
 exe('create table runs ( r integer, M integer, S integer, z0 integer )')
 with db:
