@@ -3,8 +3,8 @@
 import numpy as np
 import cv2
 import config
-import urllib.request
 import re
+import skimage.io
 
 def rawtile(r, m, s):
     '''RAWTILE - Filename for raw image
@@ -13,6 +13,9 @@ def rawtile(r, m, s):
     img = LOADIMAGE(RAWTILE(r, m, s)) returns the actual image as a
     16-bit 17100x17100-pixel image.'''
     root = config.rawroot
+    if r==40 and s<143:
+        pat = '%s/Run%i/Montage_%03i/Prefix_OnPoint_%04i.tif'
+        return pat % (root, r, m, s)
     if r==11:
         pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_OnPoint_%04i.tif'
     else:
@@ -22,7 +25,10 @@ def rawtile(r, m, s):
 def scaledtile(r, m, s, q):
     '''SCALEDTILE - Filename for scaled raw image
     fn = SCALEDTILE(r, m, s, q) returns the path of the scaled raw image
-    run/montage/slice at scale Q.'''
+    run/montage/slice at scale Q.
+    If Q is 1, returns RAWTILE filename.'''
+    if q==1:
+        return rawtile(r, m, s)
     root = config.sclroot
     pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
     return pat % (root, q, r, m, s)
@@ -35,15 +41,17 @@ def loadimage(url):
     For unknown reasons, opencv's imdecode is slower than imread, so
     file:// is much faster than http://, even if the file system is a
     remote sshfs mount.'''
-    if url.startswith('file://'):
-        url = url[7:]
-    if re.compile('^[a-z]+://').match(url):
-        resp = urllib.request.Request(url=url)
-        with urllib.request.urlopen(resp) as f:
-            dat = np.fromfile(f, dtype=np.uint8)
-        return cv2.imdecode(dat, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-    else:
-        return cv2.imread(url, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    #if url.startswith('file://'):
+    #    url = url[7:]
+    return skimage.io.imread(url)
+    #if re.compile('^[a-z]+://').match(url):
+    #    return resp = urllib.request.Request(url=url)
+    #    with urllib.request.urlopen(resp) as f:
+    #        dat = f.read()
+    #        dat = np.fromfile(f, dtype=np.uint8)
+    #    return cv2.imdecode(dat, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    #else:
+    #    return cv2.imread(url, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 
 def ihist(img):
     '''IHIST - Calculate image histogram
@@ -108,3 +116,20 @@ def saveimage(img, ofn, qual=None):
         cv2.imwrite(ofn, img)
     else:
         cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
+
+def scaledraw(r, m, s, q=25):
+    url = f'http://leechem.caltech.edu:9090/scaledraw/r{r}/m{m}/s{s}/q{q}.jpg'
+    return loadimage(url)
+
+def betaimg(z, a=6):
+    x0um = 70
+    y0um = 70
+    wum = 170
+    hum = 610
+    x0 = int(x0um/.0055) // (2**a)
+    y0 = int(y0um/.0055) // (2**a)
+    w = int(wum/.0055) // (2**a)
+    h = int(hum/.0055) // (2**a)
+    url = f'http://leechem.caltech.edu:9090/roi_pix/z{z}/x{x0}/y{y0}/w{w}/h{h}/a{a}.jpg'
+    print(x0, y0, w, h, url)
+    return loadimage(url)

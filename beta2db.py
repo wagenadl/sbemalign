@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# This loads the data from the beta alignment into the db
+'''This loads the data from the beta alignment into the db'''
 
 import psycopg2
 import time
@@ -11,11 +11,13 @@ ri = em170428.runinfo.RunInfo()
 db = psycopg2.connect(database='align170428')
 
 def exe(sql, args=None):
+    '''EXE - Execute a single SQL statement in its own transaction'''
     with db:
         with db.cursor() as c:
             c.execute(sql, args)
 
 def nofail(sql, args=None):
+    '''NOFAIL - Like EXE, but catches exceptions'''
     with db:
         with db.cursor() as c:
             try:
@@ -24,11 +26,17 @@ def nofail(sql, args=None):
                 print(e)
                 
 def sel(sql, args=None):
+    '''SEL - Run a SQL statement in its own transaction and return all
+             fetched rows.'''
     with db:
         with db.cursor() as c:
             c.execute(sql, args)
             return c.fetchall()
-                
+
+nofail('drop table info')
+exe('create table info (X integer, Y integer, root text )')
+exe("insert into info (X, Y, root) values (17100, 17100, '/lsi2/dw/170428')")
+        
 nofail('drop table runs')
 exe('create table runs ( r integer, M integer, S integer, z0 integer )')
 with db:
@@ -44,7 +52,7 @@ res = sel('select * from runs')
 nofail('drop table betapos')
 exe('''create table betapos (
        r integer, m integer, s integer,
-       xc integer, yc integer, z integer )''')
+       xc float, yc float, z integer )''')
 with db:
     with db.cursor() as c:
         for r0 in range(ri.runCount()):
