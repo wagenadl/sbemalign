@@ -17,12 +17,17 @@ def loadtile(rms):
     r,m,s = rms
     print('loadtile', r, m, s)
     img = rawimage.loadimage(rawimage.scaledtile(r,m,s,q))
-    (dx,dy) = db.sel('select dx,dy from stackup0 where r=%s and m=%s and s=%s',
+    try:
+        (dx,dy) = db.sel('select dx,dy from stackup0 where r=%s and m=%s and s=%s',
                      (r,m,s))[0]
+    except Exception as e:
+        print(e)
+        (dx,dy) = (0,0)
     dx /= q
     dy /= q
+    (dx,dy)= (0,0)
     Y,X = img.shape
-    return swiftir.extractStraightWindow(img, (X/2.+dx, Y/2.+dy, siz=Y))
+    return swiftir.extractStraightWindow(img, (X/2.-dx, Y/2.-dy), siz=Y)
 
 def swimtile(remodimg, rms, localimg):
     # REMODIMG is the leave-one-out average

@@ -87,7 +87,10 @@ def tryshift(fft_em2, uct, xc,yc, Ruct):
     roi_uct = swiftir.extractROI(uct, (int(xcuct - Ruct/2),
                                        int(ycuct - Ruct/2),
                                        Ruct, Ruct))
-    
+    if roi_uct is None:
+      print('roi_uct is none:', xc, yc)
+      raise Exception(f'roi_uct is none: {xc},{yc} [%s]' % str(uct.shape))
+   
     apo_uct = swiftir.apodize(roi_uct)
     fft_uct = swiftir.fft(apo_uct)
     
@@ -98,8 +101,7 @@ def aligntile(uct, r, m, s):
     em = swiftir.loadImage(tilefn(r, m, s))
     if em is None:
         raise Exception('Cannot load tile %s' % tilefn(r,m,s))
-    xc, yc = sel('''select xc, yc from betapos
-    where r=%s and m=%s and s=%s''',
+    xc, yc = sel('select xc, yc from betapos where r=%s and m=%s and s=%s',
                  (r, m, s))[0]
     Y,X = em.shape
     Rem = 512
@@ -140,8 +142,12 @@ def doslice(r, s):
     mm = {}
     for row in mi:
         mm[row[0]] = 1
-        
-    uct = swiftir.loadImage(uctfn(z2uct(z)))
+
+    zuct = z2uct(z)
+    ufn = uctfn(zuct) 
+    uct = swiftir.loadImage(ufn)
+    if uct is None:
+        raise Exception(f'uct is none at r={r} s={s} z={z}/{zuct} fn={ufn}')
     for m in range(nmont[r]):
         if m not in mm:
             (dx, dy, sx, sy, snr, iter) = aligntile(uct, r, m, s)

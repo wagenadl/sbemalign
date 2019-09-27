@@ -27,9 +27,9 @@ def swimtile(remodimg, rms, localimg):
     Y,X = remodimg.shape
     R = 512
     marg = (X-R)//2
-    remodimg = swiftir.extractStraightWindow(remodimg, (marg,marg), R)
+    remodimg = swiftir.extractStraightWindow(remodimg, siz=R)
     remodimg = swiftir.apodize(remodimg)
-    localimg = swiftir.extractStraightWindow(localimg, (marg,marg), R)
+    localimg = swiftir.extractStraightWindow(localimg, siz=R)
     localimg = swiftir.apodize(localimg)
     (dx, dy, sx, sy, snr) = swiftir.swim(remodimg, localimg)
     print('-> ', dx, dy, sx, sy, snr)
