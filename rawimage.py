@@ -133,3 +133,7 @@ def betaimg(z, a=6):
     url = f'http://leechem.caltech.edu:9090/roi_pix/z{z}/x{x0}/y{y0}/w{w}/h{h}/a{a}.jpg'
     print(x0, y0, w, h, url)
     return loadimage(url)
+
+def q25img(r, m, s):
+    #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
+    return loadimage(scaledtile(r,m,s,25))
