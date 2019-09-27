@@ -24,6 +24,13 @@ def swimtile(remodimg, rms, localimg):
     # LOCALIMG is the left-out image
     r,m,s = rms
     print('swimtile', r, m, s)
+    Y,X = remodimg.shape
+    R = 512
+    marg = (X-R)//2
+    remodimg = swiftir.extractStraightWindow(remodimg, (marg,marg), R)
+    remodimg = swiftir.apodize(remodimg)
+    localimg = swiftir.extractStraightWindow(localimg, (marg,marg), R)
+    localimg = swiftir.apodize(localimg)
     (dx, dy, sx, sy, snr) = swiftir.swim(remodimg, localimg)
     print('-> ', dx, dy, sx, sy, snr)
     db.exe('''insert into stackup0 (r,m,s, dx,dy,sx,sy,snr)
