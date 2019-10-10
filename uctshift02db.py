@@ -140,7 +140,7 @@ def aligntile(uct, r, m, s):
 def doslice(r, s):
     z = z0[r] + s
     
-    mi = sel('select m from uctshift where r=%s and s=%s', (r,s))
+    mi = sel('select m from uctshift0 where r=%s and s=%s', (r,s))
     mm = {}
     for row in mi:
         mm[row[0]] = 1
@@ -178,7 +178,7 @@ for n in range(nthr):
         
 def dorun(r):
     for s in range(nslice[r]):
-        ndone = sel('select count(*) from uctshift where r=%s and s=%s', (r,s))[0][0]
+        ndone = sel('select count(*) from uctshift0 where r=%s and s=%s', (r,s))[0][0]
         if ndone<nmont[r]:
             print('queuing slice', r, s)
             qu.put((r, s))
