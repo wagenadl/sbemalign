@@ -133,3 +133,7 @@ def betaimg(z, a=6):
     url = f'http://leechem.caltech.edu:9090/roi_pix/z{z}/x{x0}/y{y0}/w{w}/h{h}/a{a}.jpg'
     print(x0, y0, w, h, url)
     return loadimage(url)
+
+def partialq5img(r, m, s, ix, iy):
+    ifn = f'/lsi2/dw/170428/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
+    return loadimage(ifn)
