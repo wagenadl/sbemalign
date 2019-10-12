@@ -2,8 +2,8 @@
 import pyqplot as qp
 import numpy as np
 
-img1=rawimage.partialq5img(1,0,0, 3,4)
-img2=rawimage.partialq5img(1,1,0, 3,0)
+img1=rawimage.partialq5img(1,0,0, 2,4)
+img2=rawimage.partialq5img(1,1,0, 2,0)
 Y,X = img1.shape
 
 ######################################################################
@@ -13,22 +13,24 @@ apo = swiftir.apodize(img1[Y//2:,:])
 apoa = swiftir.apodize(img2[:Y//2,:])
 (dx, dy, sx, sy, snr) = swiftir.swim(apo, apoa)
 
-qp.figure('/tmp/s1', 4, 4)
-qp.imsc(apo, xx=np.arange(X), yy=np.arange(Y))
+qp.figure('/tmp/s1', 8,2)
+qp.subplot(1,2,1)
+qp.imsc(apo, xx=np.arange(X), yy=np.arange(Y//2))
 qp.pen('r')
 qp.marker('o', 3)
-qp.mark(X/2 + dx/2, Y/2 + dy/2)
-
-qp.figure('/tmp/s2', 4, 4)
-qp.imsc(apoa, xx=np.arange(X), yy=np.arange(Y))
+qp.mark(X/2 - dx/2, Y/4 + dy/2)
+qp.shrink()
+qp.subplot(1,2,2)
+qp.imsc(apoa, xx=np.arange(X), yy=np.arange(Y//2))
 qp.pen('r')
 qp.marker('o', 3)
-qp.mark(X/2 - dx/2, Y/2 - dy/2)
+qp.mark(X/2 + dx/2, Y/4 - dy/2)
+qp.shrink()
 
-win = swiftir.extractStraightWindow(img1, (X/2+dx/2,Y/2+dy/2),(X//2,Y//2))
-wina = swiftir.extractStraightWindow(img2, (X/2-dx/2,Y/2-dy/2),(X//2,Y//2))
+win = swiftir.extractStraightWindow(img1, (X/2-dx/2,Y/2+Y/4-dy/2),(X//2,Y//4))
+wina = swiftir.extractStraightWindow(img2, (X/2+dx/2,Y/4+dy/2),(X//2,Y//4))
 
-qp.figure('/tmp/s3', 8,4)
+qp.figure('/tmp/s3', 8,2)
 qp.subplot(1,2,1)
 qp.imsc(win)
 qp.shrink()
