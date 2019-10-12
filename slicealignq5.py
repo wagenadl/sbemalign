@@ -110,7 +110,7 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
     and ix1={ix1} and iy1={iy1}''')
     if cnt[0][0]>0:
         return
-    print(f'Working on {r} {m1}:{m2} {s} {ix1},{iy1}:{ix2},{iy2}')
+    print(f'Working on r{r} m{m1}:{m2} s{s} {ix1},{iy1}:{ix2},{iy2}')
     img1 = rawimage.partialq5img(r,m1,s,ix1,iy1)
     img2 = rawimage.partialq5img(r,m2,s,ix2,iy2)
     Y,X = img1.shape
