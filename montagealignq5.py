@@ -25,7 +25,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 6
+nthreads = 12
 
 db = aligndb.DB()
 
@@ -112,7 +112,7 @@ def queuealignmanysubtiles(r, m, ix, iy):
     where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
     if cnt==ri.nslices(r):
         return
-    fac.request(alignmanysubtiles(r, m, ix, iy))
+    fac.request(alignmanysubtiles, r, m, ix, iy)
 
 def queuealignmontage(r, m):
     for ix in range(5):
