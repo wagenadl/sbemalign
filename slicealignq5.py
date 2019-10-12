@@ -111,8 +111,16 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
     if cnt[0][0]>0:
         return
     print(f'Working on r{r} m{m1}:{m2} s{s} {ix1},{iy1}:{ix2},{iy2}')
-    img1 = rawimage.partialq5img(r,m1,s,ix1,iy1)
-    img2 = rawimage.partialq5img(r,m2,s,ix2,iy2)
+    try:
+        img1 = rawimage.partialq5img(r,m1,s,ix1,iy1)
+    except Exception as e:
+        print(e)
+        img1 = np.zeros((684,684), dtype=np.uint8) + 128
+    try:
+        img2 = rawimage.partialq5img(r,m2,s,ix2,iy2)
+    except Exception as e:
+        print(e)
+        img2 = np.zeros((684,684), dtype=np.uint8) + 128
     Y,X = img1.shape
     if sidebyside:
         img1 = img1[:,X//2:]
@@ -156,11 +164,19 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
 
 def alignsidebyside(r, m1, m2, s):
     for iy in range(5):
-        alignsubtiles(r, m1, m2, s, 4,iy, 0,iy, True)
+        try:
+            alignsubtiles(r, m1, m2, s, 4,iy, 0,iy, True)
+        except Exception as e:
+            print(e)
+            print(f'Failed to align r{r} m{m1}:{m2} s{s} iy{iy}')
 
 def alignabove(r, m1, m2, s):
     for ix in range(5):
-        alignsubtiles(r, m1, m2, s, ix,4, ix,0, False)
+        try:
+            alignsubtiles(r, m1, m2, s, ix,4, ix,0, False)
+        except Exception as e:
+            print(e)
+            print(f'Failed to align r{r} m{m1}:{m2} s{s} ix{ix}')
         
 def aligntiles(r, m1, m2, s):
     cnt = db.sel(f'''select count(1) from slicealignq5 
@@ -188,29 +204,35 @@ def queuealignmanytiles(r, m1, m2):
     S = ri.nslices(r)
     if cnt[0][0]==5*S:
         return
+    print(f'Requesting r{r} m{m1}:{m2}')
     fac.request(alignmanytiles, r, m1, m2)
 
 maketable()
     
 for r0 in range(ri.nruns()):
     r  = r0 + 1
+    print(f'Considering run {r}')
     ROWS = ri.nrows(r)
     COLS = ri.ncolumns(r)
+    cnt = db.sel(f'''select count(1) from slicealignq5 where r={r}''')[0][0]
     if COLS==1:
-        # Above
-        for m in range(ROWS-1):
-            queuealignmanytiles(r, m, m+1)
+        if cnt<(ROWS-1)*5*ri.nslices(r):
+            # Above
+            for m in range(ROWS-1):
+                queuealignmanytiles(r, m, m+1)
     elif COLS==2:
-        # Above
-        for row in range(ROWS-1):
-            for col in range(COLS):
-                m = col + 2*row
-                queuealignmanytiles(r, m, m+2)
-        # Side-by-side
-        for row in range(ROWS):
+        if cnt<((ROWS-1)*COLS + ROWS*(COLS-1))*5*ri.nslices(r):
+            # Above
+            for row in range(ROWS-1):
+                for col in range(COLS):
+                    m = col + 2*row
+                    queuealignmanytiles(r, m, m+2)
+            # Side-by-side
+            for row in range(ROWS):
                 m = 2*row
                 queuealignmanytiles(r, m, m+1)
-        
     else:
         raise Exception(f'Not handling {COLS} columns')
 
+print(f'Waiting for factory to end')
+fac.shutdown()    
