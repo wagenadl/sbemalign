@@ -41,6 +41,8 @@ def maketable():
     ix2 integer,
     iy1 integer,
     iy2 integer,
+    dx0 float,
+    dy0 float,
     dx float,
     dy float,
     sx float,
@@ -127,14 +129,12 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
     (dxc, dyc, sxc, syc, snrc) = swiftir.swim(apo1b, apo2b)
-    
-    dx += dx0
-    dy += dy0
+
     db.exe(f'''insert into slicealignq5 
-    (r,m1,m2,s,ix1,iy1,ix2,iy2,
+    (r,m1,m2,s,ix1,iy1,ix2,iy2, dx0,dy0,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb, dxc,dyc,sxc,syc,snrc)
     values
-    ({r},{m1},{m2},{s},{ix1},{iy1},{ix2},{iy2},
+    ({r},{m1},{m2},{s},{ix1},{iy1},{ix2},{iy2}, {dx0},{dy0},
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb},
     {dxc},{dyc},{sxc},{syc},{snrc})''')
