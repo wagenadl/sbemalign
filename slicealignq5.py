@@ -1,16 +1,29 @@
 #!/usr/bin/python3
 
 # I will create a db table with (r, m1, m2, s, ix1, iy1, ix2, iy2),
-# (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb).
-# The logic will be that m2 pixel (x,y) fits to m1 pixel(x-dx-dxb,y-dy-dyb).
-# It will be understood that the "b" alignment was centered at
-# (X/2-dx/2, Y/2-dy/2) of the "m1" image.
+# (dx0, dy0), (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb),
+# and (dxc, dyc, sxc, syc, snrc).
+# The logic will be that m2 pixel (x,y) fits to m1
+# pixel(x+dx0-dx-dxb-dxc,y+dy0-dy-dyb-dyc).
+# If dx0>0, it will be understood that the "b" alignment was centered at
+# (dx0+X/4-dx/2, Y/2-dy/2) of the "m1" image, else if dy0>0, the "b" alignment
+# is centered at (X/2-dx/2, dy0+Y/4-dy/2). It is always true that precisely
+# one of dx0 or dy0 is nonzero.
 # Although this information is slightly redundant, I think it will be
-# convenient to have it all.
+# convenient to have it all. 
 # I'll call the table SLICEALIGNQ5.
 # I will do the calculation for each of the 5 edge subtiles in Q5.
 # Note that I am _not_ scaling the dx, dy, etc. coordinates back up to Q1.
 # That's why "Q5" is in the table name.
+# I should have picked less stupid sign conventions.
+# Since in my implementation, dx0 is either 0 or X/2, and analogous for dy0,
+# the annoying logic about can be written as
+# (X/2+dx0/2-dx/2, Y/2+dy0/2-dy/2). This is an awful hack, but it does
+# always work. Note that X = Y = 684.
+# Similarly, the matching pixel in m2 is at (X/2-dx0/2+dx/2, Y/2-dy0/2+dy/2).
+# Also worth noting, the matching region is X/2 × Y/4 pixels if dy0>0 or
+# X/4 × Y/2 pixels if dx0>0. This can be written as
+# X/2 - dx0/2 × Y/2 - dy0/2
 
 import aligndb
 import time
@@ -130,6 +143,8 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
     apo2b = swiftir.apodize(win2)
     (dxc, dyc, sxc, syc, snrc) = swiftir.swim(apo1b, apo2b)
 
+    #print(f'{r} {m1}:{m2} {s} {ix1},{iy1}:{ix2}:{iy2} {dx0}+{dx}+{dxb}+{dxc} {dy0}+{dy}+{dyb}+{dyc}')
+    
     db.exe(f'''insert into slicealignq5 
     (r,m1,m2,s,ix1,iy1,ix2,iy2, dx0,dy0,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb, dxc,dyc,sxc,syc,snrc)
