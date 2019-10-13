@@ -23,7 +23,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 10
 
 db = aligndb.DB()
 
@@ -89,13 +89,6 @@ def alignmontage(r, m):
             img = rawimage.q25img(r,m,s) 
             Y,X = img.shape
             img = swiftir.extractStraightWindow(img, (X/2-dx, Y/2-dy), (X,Y))
-            qp.figure('/tmp/s1', 3, 3)
-            qp.imsc(img)
-            qp.at(250,250)
-            qp.pen('r')
-            qp.text(f'r{r} m{m} s{s}')
-            qp.text('dx = %.1f dy = %.1f' % (dx,dy), dy=12)
-            time.sleep(.5)
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128
@@ -103,17 +96,6 @@ def alignmontage(r, m):
             
     def saver(neighborhoodimg, tileid, tileimg):
         r,m,s = tileid
-        qp.figure('/tmp/s2', 6, 3)
-        qp.subplot(1,2,1)
-        qp.imsc(tileimg)
-        qp.at(250,250)
-        qp.pen('r')
-        qp.text(f'r{r} m{m} s{s}')
-        qp.shrink()
-        qp.subplot(1,2,2)
-        qp.imsc(neighborhoodimg)
-        qp.shrink()
-        time.sleep(.5)
         aligntiles(r, m, s, tileimg, neighborhoodimg)
     db.exe(f'''delete from montagealignq25 where r={r} and m={m}''')
     subtileids = []
@@ -131,7 +113,6 @@ def queuealignmontage(r, m):
         return
     fac.request(alignmontage, r, m)
 
-droptable()
 maketable()
     
 for r0 in range(ri.nruns()):

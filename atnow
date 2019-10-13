@@ -4,3 +4,5 @@ HERE=`pwd`
 at now <<EOF
 cd $HERE
 python3 $1
+EOF
+

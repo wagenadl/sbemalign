@@ -28,7 +28,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 12
 
 db = aligndb.DB()
 
@@ -144,7 +144,6 @@ def queuealignmontage(r, m):
         for iy in range(5):
             queuealignmanysubtiles(r, m, ix, iy)
 
-droptable()
 maketable()
     
 for r0 in range(ri.nruns()):
