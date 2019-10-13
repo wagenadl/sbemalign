@@ -14,6 +14,7 @@
 # That's why "Q5" is in the table name.
 # This is an improvement over MONTAGEALIGNQ5, in that it uses coarse alignment
 # from MONTAGEALIGNQ25.
+# Note that dx,dy are inclusive of the baseshift from MONTAGEALIGNQ5.
 
 import aligndb
 import time
@@ -57,21 +58,29 @@ def maketable():
 
 ri = db.runinfo()
 
+baseshifts = {}
+
 def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
     Y,X = tileimg.shape
-
-    apo1 = swiftir.apodize(tileimg)
-    apo2 = swiftir.apodize(neighborhoodimg)
+    SIZ = (X*3//4, Y*3//4)
+    win1 = swiftir.extractStraightWindow(tileimg, (X/2,Y/2), SIZ)
+    win2 = swiftir.extractStraightWindow(neighborhoodimg, (X/2,Y/2), SIZ)
+    apo1 = swiftir.apodize(win1)
+    apo2 = swiftir.apodize(win2)
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
 
-    win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2),
-                                         (X*3//4,Y*3//4))
+    win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2), SIZ)
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (X/2+dx/2,Y/2+dy/2),
-                                         (X*3//4,Y*3//4))
+                                         SIZ)
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
+
+    tileid = (r,m,s)
+    dx0,dy0 = baseshifts[tileid]
+    dx += dx0
+    dy += dy0
 
     db.exe(f'''insert into montagealignq5a 
     (r,m,s,ix,iy,
@@ -88,26 +97,22 @@ def alignmanysubtiles(r, m, ix, iy):
         return
     def loader(subtileid):
         r,m,s,ix,iy = subtileid
-        dx,dy,dxb,dyb = db.sel(f'''select dx,dy,dxb,dyb from montagealignq25a
-        where r={r} and m={m} and s={s}''')[0]
-        dx += dxb
-        dy += dyb
-        #dx *= 20/21
-        #dy *= 20/21
-        dx *= 5
-        dy *= 5
+        tileid = (r,m,s)
+        if tileid in baseshifts:
+            dx,dy = baseshifts[tileid]
+        else:
+            dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq25
+            where r={r} and m={m} and s={s}''')[0]
+            dx *= 20/21
+            dy *= 20/21
+            dx *= 5
+            dy *= 5
+            baseshifts[tileid] = (dx,dy)
         print(f'loading r{r} m{m} s{s} ix{ix} iy{iy}: %.1f %.1f' % (dx,dy))
         try:
             img = rawimage.partialq5img(r,m,s,ix,iy)
             Y,X = img.shape
             img = swiftir.extractStraightWindow(img, (X/2-dx, Y/2-dy), (X,Y))
-            qp.figure('/tmp/s1', 3, 3)
-            qp.imsc(img)
-            qp.at(250,250)
-            qp.pen('r')
-            qp.text(f'r{r} m{m} s{s} ix{ix} iy{iy}')
-            qp.text('dx = %.1f dy = %.1f' % (dx,dy), dy=12)
-            time.sleep(.5)
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128
@@ -115,17 +120,6 @@ def alignmanysubtiles(r, m, ix, iy):
             
     def saver(neighborhoodimg, subtileid, tileimg):
         r,m,s,ix,iy = subtileid
-        qp.figure('/tmp/s2', 6, 3)
-        qp.subplot(1,2,1)
-        qp.imsc(tileimg)
-        qp.at(250,250)
-        qp.pen('r')
-        qp.text(f'r{r} m{m} s{s} ix{ix} iy{iy}')
-        qp.shrink()
-        qp.subplot(1,2,2)
-        qp.imsc(neighborhoodimg)
-        qp.shrink()
-        time.sleep(.5)
         alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg)
     if cnt>0:
         db.exe(f'''delete from montagealignq5a 
@@ -146,8 +140,8 @@ def queuealignmanysubtiles(r, m, ix, iy):
     fac.request(alignmanysubtiles, r, m, ix, iy)
 
 def queuealignmontage(r, m):
-    for ix in [2]: #range(5):
-        for iy in [2]: #range(5):
+    for ix in range(5):
+        for iy in range(5):
             queuealignmanysubtiles(r, m, ix, iy)
 
 droptable()
