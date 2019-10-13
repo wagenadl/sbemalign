@@ -1,15 +1,16 @@
 #!/usr/bin/python3
 
-# I will create a db table with (r, m, s, ix, iy),
+# I will create a db table with (r, m, s, ix, iy, x,y),
 # (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb).
-# The logic will be that s pixel (x,y) fits to neighborhood
-# pixel(x+dx+dxb,y+dy+dyb).
+# The logic will be that s pixel (x',y') fits to neighborhood
+# pixel(x'-dx-dxb,y'-dy-dyb).
 # It will be understood that the "b" alignment was centered at
-# (X/2-dx/2, Y/2-dy/2) of the "m" image.
+# (x, y) of the image.
 # Although this information is slightly redundant, I think it will be
 # convenient to have it all.
-# I'll call the table MONTAGEALIGNQ5.
-# I will do the calculation for each of the 25 subtiles in Q5.
+# I'll call the table MONTAGEALIGNATTOUCHQ5.
+# I will do the calculation for each of the positions defined by the
+# slicealignq5pos table.
 # Note that I am _not_ scaling the dx, dy, etc. coordinates back up to Q1.
 # That's why "Q5" is in the table name.
 
@@ -25,20 +26,22 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 12
+nthreads = 1
 
 db = aligndb.DB()
 
 def droptable():
-    db.exe('''drop table montagealignq5''')
+    db.exe('''drop table montagealignattouchq5''')
 
 def maketable():
-    db.exe('''create table if not exists montagealignq5 (
+    db.exe('''create table if not exists montagealignattouchq5 (
     r integer,
     m integer,
     s integer,
     ix integer,
     iy integer,
+    x float, 
+    y float,
 
     dx float,
     dy float,
@@ -55,35 +58,45 @@ def maketable():
 
 ri = db.runinfo()
 
-def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
+def alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg):
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
     Y,X = tileimg.shape
-
-    apo1 = swiftir.apodize(tileimg)
-    apo2 = swiftir.apodize(neighborhoodimg)
+    dx0,dy0,dxb0,dyb0 = db.sel(f'''select dx,dy,dxb,dyb from montagealignq5 
+    where r={r} and m={m} and s={s} and ix={ix} and iy={iy}''')[0]
+    dx0 += dxb0
+    dy0 += dyb0
+    SIZ = (X//4, Y//4)
+    qp.figure('/tmp/s1', 8, 4)
+    win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
+    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x+dx0,y+dy0), SIZ)
+    qp.subplot(1,2,1)
+    qp.imsc(win1)
+    qp.shrink()
+    qp.subplot(1,2,2)
+    qp.imsc(win2)
+    qp.shrink()
+    
+    apo1 = swiftir.apodize(win1)
+    apo2 = swiftir.apodize(win2)
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
+    #dx += dx0
+    #dy += dy0
 
-    win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2),
-                                         (X*3//4,Y*3//4))
-    win2 = swiftir.extractStraightWindow(neighborhoodimg, (X/2+dx/2,Y/2+dy/2),
-                                         (X*3//4,Y*3//4))
+    win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
+    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x+dx,y+dy), SIZ)
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
 
-    db.exe(f'''insert into montagealignq5 
-    (r,m,s,ix,iy,
+    db.exe(f'''insert into montagealignattouchq5 
+    (r,m,s,ix,iy,x,y,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
     values
-    ({r},{m},{s},{ix},{iy},
+    ({r},{m},{s},{ix},{iy},{x},{y},
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
         
 def alignmanysubtiles(r, m, ix, iy):
-    cnt = db.sel(f'''select count(1) from montagealignq5 
-    where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
-    if cnt==ri.nslices(r):
-        return
     def loader(subtileid):
         r,m,s,ix,iy = subtileid
         try:
@@ -95,10 +108,19 @@ def alignmanysubtiles(r, m, ix, iy):
             
     def saver(neighborhoodimg, subtileid, tileimg):
         r,m,s,ix,iy = subtileid
-        alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg)
-    if cnt>0:
-        db.exe(f'''delete from montagealignq5 
-        where r={r} and m={m} and ix={ix} and iy={iy}''')
+        rows1 = db.sel(f'''select x1,y1 from slicealignq5pos 
+        where r={r} and m1={m} and s={s} and ix1={ix} and iy1={iy}''')
+        for row in rows1:
+            x,y = row
+            alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg)
+        rows2 = db.sel(f'''select x2,y2 from slicealignq5pos 
+        where r={r} and m2={m} and s={s} and ix2={ix} and iy2={iy}''')
+        for row in rows2:
+            x,y = row
+            alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg)
+
+    db.exe(f'''delete from montagealignattouchq5 
+    where r={r} and m={m} and ix={ix} and iy={iy}''')
     subtileids = []
     for s in range(ri.nslices(r)):
         subtileids.append((r,m,s,ix,iy))
@@ -108,9 +130,13 @@ def alignmanysubtiles(r, m, ix, iy):
 fac = factory.Factory(nthreads)
     
 def queuealignmanysubtiles(r, m, ix, iy):
-    cnt = db.sel(f'''select count(1) from montagealignq5 
+    cnt = db.sel(f'''select count(1) from montagealignattouchq5 
     where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
-    if cnt==ri.nslices(r):
+    cnt1 = db.sel(f'''select count(1) from slicealignq5
+    where r={r} and m1={m} and ix1={ix} and iy1={iy}''')[0][0]
+    cnt2 = db.sel(f'''select count(1) from slicealignq5
+    where r={r} and m2={m} and ix2={ix} and iy2={iy}''')[0][0]
+    if cnt==cnt1+cnt2:
         return
     fac.request(alignmanysubtiles, r, m, ix, iy)
 
@@ -119,6 +145,7 @@ def queuealignmontage(r, m):
         for iy in range(5):
             queuealignmanysubtiles(r, m, ix, iy)
 
+droptable()
 maketable()
     
 for r0 in range(ri.nruns()):
