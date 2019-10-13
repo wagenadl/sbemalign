@@ -18,7 +18,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 10
 
 db = aligndb.DB()
 
