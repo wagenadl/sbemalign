@@ -88,12 +88,12 @@ def alignmanysubtiles(r, m, ix, iy):
         return
     def loader(subtileid):
         r,m,s,ix,iy = subtileid
-        dx,dy,dxb,dyb = db.sel(f'''select dx,dy,dxb,dyb from montagealignq25
+        dx,dy,dxb,dyb = db.sel(f'''select dx,dy,dxb,dyb from montagealignq25a
         where r={r} and m={m} and s={s}''')[0]
         dx += dxb
         dy += dyb
-        dx *= 20/21
-        dy *= 20/21
+        #dx *= 20/21
+        #dy *= 20/21
         dx *= 5
         dy *= 5
         print(f'loading r{r} m{m} s{s} ix{ix} iy{iy}: %.1f %.1f' % (dx,dy))
@@ -107,7 +107,7 @@ def alignmanysubtiles(r, m, ix, iy):
             qp.pen('r')
             qp.text(f'r{r} m{m} s{s} ix{ix} iy{iy}')
             qp.text('dx = %.1f dy = %.1f' % (dx,dy), dy=12)
-            time.sleep(2)
+            time.sleep(.5)
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128

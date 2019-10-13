@@ -6,8 +6,7 @@
 # pixel(x+dx+dxb,y+dy+dyb).
 # It will be understood that the "b" alignment was centered at
 # (X/2-dx/2, Y/2-dy/2) of the "m1" image.
-# Although this information is slightly redundant, I think it will be
-# convenient to have it all.
+# The dx here is inclusive of the shift in MONTAGEALIGNQ25A.
 # I'll call the table MONTAGEALIGNQ25.
 # Note that I am _not_ scaling the dx, dy, etc. coordinates back up to Q1.
 # That's why "Q25" is in the table name.
@@ -24,7 +23,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 12
+nthreads = 1
 
 db = aligndb.DB()
 
@@ -68,6 +67,11 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
 
+    dx0,dy0 = db.sel(f'''select dx+dxb,dy+dyb from montagealignq25a
+    where r={r} and m={m} and s={s}''')[0]
+    dx += dx0
+    dy += dy0
+    
     db.exe(f'''insert into montagealignq25 
     (r,m,s,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
@@ -79,8 +83,19 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
 def alignmontage(r, m):
     def loader(tileid):
         r,m,s = tileid
+        dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq25a
+        where r={r} and m={m} and s={s}''')[0]
         try:
-            img = rawimage.q25img(r,m,s)
+            img = rawimage.q25img(r,m,s) 
+            Y,X = img.shape
+            img = swiftir.extractStraightWindow(img, (X/2-dx, Y/2-dy), (X,Y))
+            qp.figure('/tmp/s1', 3, 3)
+            qp.imsc(img)
+            qp.at(250,250)
+            qp.pen('r')
+            qp.text(f'r{r} m{m} s{s}')
+            qp.text('dx = %.1f dy = %.1f' % (dx,dy), dy=12)
+            time.sleep(.5)
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128
@@ -88,6 +103,17 @@ def alignmontage(r, m):
             
     def saver(neighborhoodimg, tileid, tileimg):
         r,m,s = tileid
+        qp.figure('/tmp/s2', 6, 3)
+        qp.subplot(1,2,1)
+        qp.imsc(tileimg)
+        qp.at(250,250)
+        qp.pen('r')
+        qp.text(f'r{r} m{m} s{s}')
+        qp.shrink()
+        qp.subplot(1,2,2)
+        qp.imsc(neighborhoodimg)
+        qp.shrink()
+        time.sleep(.5)
         aligntiles(r, m, s, tileimg, neighborhoodimg)
     db.exe(f'''delete from montagealignq25 where r={r} and m={m}''')
     subtileids = []
@@ -105,6 +131,7 @@ def queuealignmontage(r, m):
         return
     fac.request(alignmontage, r, m)
 
+droptable()
 maketable()
     
 for r0 in range(ri.nruns()):
