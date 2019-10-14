@@ -62,6 +62,15 @@ baseshifts = {}
 
 def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
+    if neighborhoodimg is None:
+        db.exe(f'''insert into montagealignq5coa 
+        (r,m,s,ix,iy,
+        dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
+        values
+        ({r},{m},{s},{ix},{iy},
+        0,0,0,0,100,
+        0,0,0,0,100)''')
+        return
     Y,X = tileimg.shape
     SIZ = (512,512) # This is 1-px less than (X,Y)*3/4
     win1 = swiftir.extractStraightWindow(tileimg, (X/2,Y/2), SIZ)
