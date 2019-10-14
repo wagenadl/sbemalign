@@ -25,7 +25,6 @@ def loadtile(rms):
         (dx,dy) = (0,0)
     dx /= q
     dy /= q
-    (dx,dy)= (0,0)
     Y,X = img.shape
     return swiftir.extractStraightWindow(img, (X/2.-dx, Y/2.-dy), siz=Y)
 
