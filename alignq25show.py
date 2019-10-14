@@ -39,7 +39,7 @@ for s in range(S):
         dx,dy,snrb = db.sel(f'''select dx+dxb,dy+dyb,snrb from {tbl}
         where r={r} and m={m} and s={s}''')[0]
         afm = np.array([[1,0,dx],[0,1,dy]])
-        img = swiftir.extractStraightWindow(img, (X/2+dx,X/2+dy), (X,Y))
+        img = swiftir.extractStraightWindow(img, (X/2-dx,X/2-dy), (X,Y))
         #img = swiftir.cv2.warpAffine(img, afm, (Y,X),
         #                             flags=swiftir.cv2.INTER_LINEAR,
         #                             borderMode=swiftir.cv2.BORDER_CONSTANT,

@@ -24,7 +24,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 10
+nthreads = 8
 
 db = aligndb.DB()
 
@@ -67,11 +67,6 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
     SIZ = (512,512)
     win1 = swiftir.extractStraightWindow(tileimg, (X/2,Y/2), SIZ)
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (X/2,Y/2), SIZ)
-    print('win1: %.1f - %.1f. win2: %.1f - %.1f' %
-          (np.min(win1), np.max(win1),
-          np.min(win2), np.max(win2)))
-    print(win1.dtype)
-    print(win2.dtype)
     apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
@@ -86,7 +81,8 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
         qp.shrink()
         qp.subplot(1,2,2)
         qp.imsc(apo2)
-        time.sleep(.25)
+        qp.shrink()
+        #time.sleep(.25)
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1, apo2)
 
@@ -100,7 +96,10 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
 
     dx += dxb
     dy += dyb
-    return swiftir.extractStraightWindow(tileimg, (X/2-dx, Y/2-dy), (Y,X))
+    print(f'r{r} m{m} s{s}: %.1f %.1f' % (dx, dy))
+    #dx = -dx
+    #dy = -dy
+    return swiftir.extractStraightWindow(tileimg, (X/2-dx, Y/2-dy), (X,Y))
         
 def alignmontage(r, m):
     def loader(tileid):
@@ -121,7 +120,7 @@ def alignmontage(r, m):
     for s in range(ri.nslices(r)):
         tileid = (r,m,s)
         ifns.append(tileid)
-    swiftir.buildout(ifns, loader=loader, saver=saver, nbase=11)
+    swiftir.buildout(ifns, loader=loader, saver=saver, nbase=11, update=True)
 
 fac = factory.Factory(nthreads)
     
