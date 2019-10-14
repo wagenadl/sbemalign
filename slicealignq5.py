@@ -72,6 +72,13 @@ def maketable():
     syc float,
     snrc float 
     )''')
+    db.exe('''create or replace view slicealignq5pos as (
+    select r,m1,m2,s,ix1,iy1,ix2,iy2, dx0, dy0,
+    684/2 + dx0/2 - dx/2 - dxb/2 - dxc/2 as x1,
+    684/2 + dy0/2 - dy/2 - dyb/2 - dxc/2 as y1,
+    684/2 - dx0/2 + dx/2 + dxb/2 + dxc/2 as x2,
+    684/2 - dy0/2 + dy/2 + dyb/2 + dyc/2 as y2,
+    snr, snrb, snrc from slicealignq5 )''')
 
 def runinfo():
     ri = db.sel('select r,M,S,z0 from runs')

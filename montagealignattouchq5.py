@@ -26,7 +26,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 8
 
 db = aligndb.DB()
 
@@ -34,6 +34,7 @@ def droptable():
     db.exe('''drop table montagealignattouchq5''')
 
 def maketable():
+ 
     db.exe('''create table if not exists montagealignattouchq5 (
     r integer,
     m integer,
@@ -58,26 +59,37 @@ def maketable():
 
 ri = db.runinfo()
 
-def alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg):
+baseshifts = {}
+
+def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
+    r, m, s, ix, iy = subtileid
+    x,y,dx0,dy0 = row
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
     Y,X = tileimg.shape
-    dx0,dy0,dxb0,dyb0 = db.sel(f'''select dx,dy,dxb,dyb from montagealignq5 
-    where r={r} and m={m} and s={s} and ix={ix} and iy={iy}''')[0]
-    dx0 += dxb0
-    dy0 += dyb0
-    SIZ = (X//4, Y//4)
-    qp.figure('/tmp/s1', 8, 4)
+    if dx0:
+        SIZ = (X//4, Y//2)
+    elif dy0:
+        SIZ = (X//2, Y//4)
+    else:
+        SIZ = (X//2, Y//2)
     win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
-    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x+dx0,y+dy0), SIZ)
-    qp.subplot(1,2,1)
-    qp.imsc(win1)
-    qp.shrink()
-    qp.subplot(1,2,2)
-    qp.imsc(win2)
-    qp.shrink()
-    
+    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x,y), SIZ)
     apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)
+
+    #qp.figure('/tmp/s1', 8, 4)
+    #qp.subplot(1,2,1)
+    #qp.imsc(apo1)
+    #Y1,X1 = win1.shape
+    #qp.at(X1/2,Y1/2)
+    #qp.pen('b')
+    #qp.text(f'{ix},{iy} {dx0}/{dy0}: {SIZ}')
+    #qp.shrink(1,1)
+    #qp.subplot(1,2,2)
+    #qp.imsc(apo2)
+    #qp.shrink(1,1)
+    #time.sleep(1)
+    
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
     #dx += dx0
     #dy += dy0
@@ -87,6 +99,10 @@ def alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg):
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
+
+    dx0,dy0 = baseshifts[subtileid]
+    dx += dx0
+    dy += dy0
 
     db.exe(f'''insert into montagealignattouchq5 
     (r,m,s,ix,iy,x,y,
@@ -99,8 +115,19 @@ def alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg):
 def alignmanysubtiles(r, m, ix, iy):
     def loader(subtileid):
         r,m,s,ix,iy = subtileid
+        if subtileid in baseshifts:
+            dx,dy = baseshifts[subtileid]
+        else:
+            dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq5b
+            where r={r} and m={m} and s={s} and ix={ix} and iy={iy}''')[0]
+            dx *= 20/21
+            dy *= 20/21
+            baseshifts[subtileid] = (dx,dy)
+        print(f'loading r{r} m{m} s{s} ix{ix} iy{iy}: %.1f %.1f' % (dx,dy))
         try:
             img = rawimage.partialq5img(r,m,s,ix,iy)
+            Y,X = img.shape
+            img = swiftir.extractStraightWindow(img, (X/2-dx, Y/2-dy), (X,Y))
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128
@@ -108,16 +135,14 @@ def alignmanysubtiles(r, m, ix, iy):
             
     def saver(neighborhoodimg, subtileid, tileimg):
         r,m,s,ix,iy = subtileid
-        rows1 = db.sel(f'''select x1,y1 from slicealignq5pos 
+        rows1 = db.sel(f'''select x1,y1,dx0,dy0 from slicealignq5pos 
         where r={r} and m1={m} and s={s} and ix1={ix} and iy1={iy}''')
         for row in rows1:
-            x,y = row
-            alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg)
-        rows2 = db.sel(f'''select x2,y2 from slicealignq5pos 
+            alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
+        rows2 = db.sel(f'''select x2,y2,dx0,dy0 from slicealignq5pos 
         where r={r} and m2={m} and s={s} and ix2={ix} and iy2={iy}''')
         for row in rows2:
-            x,y = row
-            alignsubtiles(r, m, s, ix, iy, x, y, tileimg, neighborhoodimg)
+            alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
 
     db.exe(f'''delete from montagealignattouchq5 
     where r={r} and m={m} and ix={ix} and iy={iy}''')
