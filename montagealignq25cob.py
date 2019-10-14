@@ -24,15 +24,15 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 10
+nthreads = 8
 
 db = aligndb.DB()
 
 def droptable():
-    db.exe('''drop table montagealignq25co''')
+    db.exe('''drop table montagealignq25cob''')
 
 def maketable():
-    db.exe('''create table if not exists montagealignq25co (
+    db.exe('''create table if not exists montagealignq25cob (
     r integer,
     m integer,
     s integer,
@@ -54,7 +54,7 @@ ri = db.runinfo()
 
 def aligntiles(r, m, s, tileimg, neighborhoodimg):
     if neighborhoodimg is None:
-        db.exe(f'''insert into montagealignq25co 
+        db.exe(f'''insert into montagealignq25cob 
         (r,m,s,
         dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
         values
@@ -83,14 +83,23 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
         qp.figure('/tmp/s1', 6, 3)
         qp.subplot(1,2,1)
         qp.imsc(apo1)
-        qp.shrink()
+        qp.shrink(1,1)
         qp.subplot(1,2,2)
         qp.imsc(apo2)
+        qp.shrink(1,1)
         time.sleep(.25)
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1, apo2)
 
-    db.exe(f'''insert into montagealignq25co 
+    dxf = dx+dxb
+    dyf = dy+dyb
+    
+    dx0,dy0 = db.sel(f'''select dx+dxb,dy+dyb from montagealignq25co
+    where r={r} and m={m} and s={s}''')[0]
+    dx += dx0
+    dy += dy0
+
+    db.exe(f'''insert into montagealignq25cob 
     (r,m,s,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
     values
@@ -98,15 +107,17 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
 
-    dx += dxb
-    dy += dyb
-    return swiftir.extractStraightWindow(tileimg, (X/2-dx, Y/2-dy), (Y,X))
+    return swiftir.extractStraightWindow(tileimg, (X/2-dxf, Y/2-dyf), (Y,X))
         
 def alignmontage(r, m):
     def loader(tileid):
         r,m,s = tileid
+        dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq25co
+        where r={r} and m={m} and s={s}''')[0]
         try:
-            img = rawimage.q25img(r,m,s)
+            img = rawimage.q25img(r,m,s) 
+            Y,X = img.shape
+            img = swiftir.extractStraightWindow(img, (X/2-dx, Y/2-dy), (X,Y))
         except Exception as e:
             print(e)
             img = np.zeros((684,684), dtype=np.uint8) + 128
@@ -116,7 +127,7 @@ def alignmontage(r, m):
         r,m,s = tileid
         print(f'Working on r{r} m{m} s{s}')
         return aligntiles(r, m, s, tileimg, neighborhoodimg)
-    db.exe(f'''delete from montagealignq25co where r={r} and m={m}''')
+    db.exe(f'''delete from montagealignq25cob where r={r} and m={m}''')
     ifns = []
     for s in range(ri.nslices(r)):
         tileid = (r,m,s)
@@ -126,7 +137,7 @@ def alignmontage(r, m):
 fac = factory.Factory(nthreads)
     
 def queuealignmontage(r, m):
-    cnt = db.sel(f'''select count(1) from montagealignq25co 
+    cnt = db.sel(f'''select count(1) from montagealignq25cob 
     where r={r} and m={m}''')[0][0]
     if cnt==ri.nslices(r):
         return
