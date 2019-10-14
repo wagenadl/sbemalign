@@ -64,6 +64,7 @@ baseshifts = {}
 def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     r, m, s, ix, iy = subtileid
     x,y,dx0,dy0 = row
+    # _These_ dx0,dy0 are positions of original subtile in slicealignq5
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
     Y,X = tileimg.shape
     if dx0:
@@ -72,6 +73,12 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
         SIZ = (X//2, Y//4)
     else:
         SIZ = (X//2, Y//2)
+
+    dx0,dy0 = baseshifts[subtileid] # _These_ dx0,dy0 are the baseshifts
+    # from montagealignq5b
+    x += dx0
+    y += dy0
+
     win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (x,y), SIZ)
     apo1 = swiftir.apodize(win1)
@@ -88,7 +95,7 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     #qp.subplot(1,2,2)
     #qp.imsc(apo2)
     #qp.shrink(1,1)
-    #time.sleep(1)
+    #time.sleep(.5)
     
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
     #dx += dx0
@@ -100,7 +107,6 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
 
-    dx0,dy0 = baseshifts[subtileid]
     dx += dx0
     dy += dy0
 
@@ -170,7 +176,7 @@ def queuealignmontage(r, m):
         for iy in range(5):
             queuealignmanysubtiles(r, m, ix, iy)
 
-droptable()
+#droptable()
 maketable()
     
 for r0 in range(ri.nruns()):
