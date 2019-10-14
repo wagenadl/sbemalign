@@ -66,8 +66,8 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
 
-    qp.figure('/tmp/s1', 3, 3)
-    qp.imsc(apo1b)
+    #qp.figure('/tmp/s1', 3, 3)
+    #qp.imsc(apo1b)
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
 
