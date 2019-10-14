@@ -33,6 +33,13 @@ def scaledtile(r, m, s, q):
     pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
     return pat % (root, q, r, m, s)
 
+def partialq5tile(r, m, s, ix, iy):
+    '''PARTIALQ5TILE - Filename for scaled raw subtile
+    fn = PARTIALQ5TILE(r, m, s, ix, iy) returns the path of the scaled raw 
+    subtile image (ix, iy) of run/montage/slice. IX and IY run from 0
+    to 4 inclusive.'''
+    return f'/lsi2/dw/170428/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
+
 def loadimage(url):
     '''LOADIMAGE - Download an image from anywhere
     img = LOADIMAGE(url) downloads an image from anywhere.
@@ -134,6 +141,10 @@ def betaimg(z, a=6):
     print(x0, y0, w, h, url)
     return loadimage(url)
 
+def partialq5img(r, m, s, ix, iy):
+    return loadimage(partialq5tile(r, m, s, ix, iy))
+
 def q25img(r, m, s):
     #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
-    return loadimage(scaledtile(r,m,s,25))
+    return loadimage(scaledtile(r, m, s, 25))
+

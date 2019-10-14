@@ -79,6 +79,34 @@ class DB:
             return t
         else:
             raise ValueError(f'Unknown stage: {stage}')
-    
-            
+
+    def runinfo(self):
+        ri = self.sel('select r,M,S,z0 from runs')
+        class RI:
+            def nruns(self):
+                return self.R
+            def nslices(self, r):
+                return self.SS[r]
+            def nmontages(self, r):
+                return self.MM[r]
+            def z0(self, r):
+                return self.zz0[r]
+            def ncolumns(self, r):
+                if self.MM[r]<=3:
+                    return 1
+                else:
+                    return 2
+            def nrows(self, r):
+                return self.nmontages(r) // self.ncolumns(r)
+        res = RI()
+        res.R = len(ri)
+        res.MM = {}
+        res.SS = {}
+        res.zz0 = {}
+        for row in ri:
+            r = row[0]
+            res.MM[r] = row[1]
+            res.SS[r] = row[2]
+            res.zz0[r] = row[3]
+        return res
     
