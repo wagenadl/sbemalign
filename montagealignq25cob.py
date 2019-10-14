@@ -132,7 +132,7 @@ def alignmontage(r, m):
     for s in range(ri.nslices(r)):
         tileid = (r,m,s)
         ifns.append(tileid)
-    swiftir.buildout(ifns, loader=loader, transformer=saver, nbase=21)
+    swiftir.buildout(ifns, loader=loader, saver=saver, nbase=21)
 
 fac = factory.Factory(nthreads)
     
