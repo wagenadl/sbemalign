@@ -54,15 +54,14 @@ ri = db.runinfo()
 def aligntiles(r, m, s, tileimg, neighborhoodimg):
     print(f'Working on r{r} m{m} s{s}')
     Y,X = tileimg.shape
-
+    SIZ = (512,512)
     apo1 = swiftir.apodize(tileimg)
     apo2 = swiftir.apodize(neighborhoodimg)
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
 
-    win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2),
-                                         (X*3//4,Y*3//4))
+    win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2), SIZ))
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (X/2+dx/2,Y/2+dy/2),
-                                         (X*3//4,Y*3//4))
+                                         SIZ)
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
 
@@ -108,8 +107,6 @@ def alignmontage(r, m):
         img = loader((r,m,s))
         dx,dy = saver(img0, (r,m,s), img)
         Y,X = img.shape
-        dx=-dx
-        dy=-dy
         img0 = swiftir.extractStraightWindow(img, (X/2-dx,Y/2-dy), (X,Y))
 
 fac = factory.Factory(nthreads)
