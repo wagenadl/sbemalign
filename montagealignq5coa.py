@@ -80,7 +80,7 @@ def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
 
     win1 = swiftir.extractStraightWindow(tileimg, (X/2-dx/2,Y/2-dy/2), SIZ)
-    win1 = swiftir.extractStraightWindow(neighborhoodimg,
+    win2 = swiftir.extractStraightWindow(neighborhoodimg,
                                          (X/2+dx/2,Y/2+dy/2), SIZ)
     apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)    

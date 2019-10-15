@@ -26,7 +26,12 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 8
+SHOW = False
+
+nthreads = 4
+
+if SHOW:
+    nthreads = 1
 
 db = aligndb.DB()
 
@@ -64,51 +69,64 @@ baseshifts = {}
 def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     r, m, s, ix, iy = subtileid
     x,y,dx0,dy0 = row
-    # _These_ dx0,dy0 are positions of original subtile in slicealignq5
-    print(f'Working on r{r} m{m} s{s} {ix},{iy}')
+    # dx0,dy0 are positions of original subtile in slicealignq5
+    print(f'Working on r{r} m{m} s{s} {ix},{iy} ({dx0},{dy0})')
     Y,X = tileimg.shape
-    if dx0:
+    if dx0>dy0:
         SIZ = (X//4, Y//2)
-    elif dy0:
+    elif dy0>dx0:
         SIZ = (X//2, Y//4)
     else:
         SIZ = (X//2, Y//2)
+    print(f'SIZ is {SIZ}')
 
-    dx0,dy0 = baseshifts[subtileid] # _These_ dx0,dy0 are the baseshifts
-    # from montagealignq5b
-    x += dx0
-    y += dy0
+    if neighborhoodimg is None:
+        db.exe(f'''insert into montagealignattouchq5 
+        (r,m,s,ix,iy,x,y,
+        dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
+        values
+        ({r},{m},{s},{ix},{iy},{x},{y},
+        0,0,0,0,100,
+        0,0,0,0,100)''')
+        return
+
+    dxbase,dybase = baseshifts[subtileid] # These are the baseshifts
+    # from montagealignq5coa
+    x += dxbase
+    y += dybase
+    # So now we are nominally back at the pixel position where
+    # the original cross-montage match was made
 
     win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
+    print('shape', win1.shape)
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (x,y), SIZ)
     apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)
 
-    #qp.figure('/tmp/s1', 8, 4)
-    #qp.subplot(1,2,1)
-    #qp.imsc(apo1)
-    #Y1,X1 = win1.shape
-    #qp.at(X1/2,Y1/2)
-    #qp.pen('b')
-    #qp.text(f'{ix},{iy} {dx0}/{dy0}: {SIZ}')
-    #qp.shrink(1,1)
-    #qp.subplot(1,2,2)
-    #qp.imsc(apo2)
-    #qp.shrink(1,1)
-    #time.sleep(.5)
+    if SHOW:
+        qp.figure('/tmp/s1', 8, 4)
+        qp.subplot(1,2,1)
+        qp.imsc(apo1)
+        Y1,X1 = win1.shape
+        qp.at(X1/2,Y1/2)
+        qp.pen('b')
+        qp.text(f'{ix},{iy} {dx0}/{dy0}: {SIZ}')
+        qp.shrink(1,1)
+        qp.subplot(1,2,2)
+        qp.imsc(apo2)
+        qp.shrink(1,1)
+        #time.sleep(.5)
     
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
-    #dx += dx0
-    #dy += dy0
 
-    win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
-    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x+dx,y+dy), SIZ)
+    win1 = swiftir.extractStraightWindow(tileimg, (x-dx/2,y-dy/2), SIZ)
+    win2 = swiftir.extractStraightWindow(neighborhoodimg, (x+dx/2,y+dy/2), SIZ)
     apo1b = swiftir.apodize(win1)
     apo2b = swiftir.apodize(win2)
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1b, apo2b)
 
-    dx += dx0
-    dy += dy0
+    dx += dxbase
+    dy += dybase
 
     db.exe(f'''insert into montagealignattouchq5 
     (r,m,s,ix,iy,x,y,
@@ -124,10 +142,8 @@ def alignmanysubtiles(r, m, ix, iy):
         if subtileid in baseshifts:
             dx,dy = baseshifts[subtileid]
         else:
-            dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq5b
+            dx,dy = db.sel(f'''select dx+dxb,dy+dyb from montagealignq5coa
             where r={r} and m={m} and s={s} and ix={ix} and iy={iy}''')[0]
-            dx *= 20/21
-            dy *= 20/21
             baseshifts[subtileid] = (dx,dy)
         print(f'loading r{r} m{m} s{s} ix{ix} iy{iy}: %.1f %.1f' % (dx,dy))
         try:
@@ -139,7 +155,7 @@ def alignmanysubtiles(r, m, ix, iy):
             img = np.zeros((684,684), dtype=np.uint8) + 128
         return img 
             
-    def saver(neighborhoodimg, subtileid, tileimg):
+    def saver(subtileid, tileimg, neighborhoodimg, aux):
         r,m,s,ix,iy = subtileid
         rows1 = db.sel(f'''select x1,y1,dx0,dy0 from slicealignq5pos 
         where r={r} and m1={m} and s={s} and ix1={ix} and iy1={iy}''')
@@ -155,8 +171,8 @@ def alignmanysubtiles(r, m, ix, iy):
     subtileids = []
     for s in range(ri.nslices(r)):
         subtileids.append((r,m,s,ix,iy))
-    swiftir.remod(subtileids, halfwidth=10, topbot=True,
-                  loader=loader, saver=saver)
+    swiftir.buildout(subtileids, nbase=11,
+                     loader=loader, saver=saver)
 
 fac = factory.Factory(nthreads)
     
