@@ -30,6 +30,7 @@ import rawimage
 import factory
 
 nthreads = 12
+nthreads = 1
 
 db = aligndb.DB()
 

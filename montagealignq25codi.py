@@ -6,11 +6,12 @@
 # pixel(x+dx+dxb,y+dy+dyb).
 # It will be understood that the "b" alignment was centered at
 # (X/2-dx/2, Y/2-dy/2) of the "m1" image.
-# I'll call the table MONTAGEALIGNQ25CO.
+# I'll call the table MONTAGEALIGNQ25CODI.
 # This version works from the center out. It uses swiftir's buildout
 # to reduce accumulation of errors.
 # Note that I am _not_ scaling the dx, dy, etc. coordinates back up to Q1.
 # That's why "Q25" is in the table name.
+# This version discounts a percentage of the shift to reduce drift.
 
 import aligndb
 import time
@@ -26,6 +27,7 @@ import factory
 
 TEST = True
 
+LAMBDA = 20
 nthreads = 8
 
 if TEST:
@@ -34,10 +36,10 @@ if TEST:
 db = aligndb.DB()
 
 def droptable():
-    db.exe('''drop table montagealignq25co''')
+    db.exe('''drop table montagealignq25codi''')
 
 def maketable():
-    db.exe('''create table if not exists montagealignq25co (
+    db.exe('''create table if not exists montagealignq25codi (
     r integer,
     m integer,
     s integer,
@@ -59,7 +61,7 @@ ri = db.runinfo()
 
 def aligntiles(r, m, s, tileimg, neighborhoodimg):
     if neighborhoodimg is None:
-        db.exe(f'''insert into montagealignq25co 
+        db.exe(f'''insert into montagealignq25codi 
         (r,m,s,
         dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
         values
@@ -91,7 +93,7 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1, apo2)
 
-    db.exe(f'''insert into montagealignq25co 
+    db.exe(f'''insert into montagealignq25codi 
     (r,m,s,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
     values
@@ -101,6 +103,9 @@ def aligntiles(r, m, s, tileimg, neighborhoodimg):
 
     dx += dxb
     dy += dyb
+
+    dx *= np.exp(-1/LAMBDA)
+    dy *= np.exp(-1/LAMBDA)
     print(f'r{r} m{m} s{s}: %.1f %.1f' % (dx, dy))
     #dx = -dx
     #dy = -dy
@@ -120,7 +125,7 @@ def alignmontage(r, m):
         r,m,s = tileid
         print(f'Working on r{r} m{m} s{s}')
         return aligntiles(r, m, s, tileimg, neighborhoodimg)
-    db.exe(f'''delete from montagealignq25co where r={r} and m={m}''')
+    db.exe(f'''delete from montagealignq25codi where r={r} and m={m}''')
     ifns = []
     for s in range(ri.nslices(r)):
         tileid = (r,m,s)
@@ -130,7 +135,7 @@ def alignmontage(r, m):
 fac = factory.Factory(nthreads)
     
 def queuealignmontage(r, m):
-    cnt = db.sel(f'''select count(1) from montagealignq25co 
+    cnt = db.sel(f'''select count(1) from montagealignq25codi 
     where r={r} and m={m}''')[0][0]
     if cnt==ri.nslices(r):
         return
