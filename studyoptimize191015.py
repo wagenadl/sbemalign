@@ -242,15 +242,16 @@ We use our idx_internal and idx_touch maps to convert between k,m / t,m / t,m,m'
 and p indices.
 '''
 
-# Let's do E_elast, only X for the moment
+# Let's do E_elast
 print('Constructing matrix - E_elast')
-alpha = .1
+alpha = .01
 for m in range(M):
     for k in range(KK[m]):
         for s in range(S):
             idx = idx_internal[m,k,s]
             if idx>=0:
-                A[idx,idx] = alpha
+                A[idx,idx] = alpha # for X
+                A[idx+P,idx+P] = alpha # for Y
 
 # Next, E_slic
 print('Constructing matrix - E_slice')
@@ -262,8 +263,10 @@ for m in range(M):
             for s in range(S):
                 idx = idx_touch[mm_][l,s]
                 if idx>=0:
-                    A[idx, idx] = gamma
+                    A[idx, idx] += gamma # for X
+                    A[idx+P, idx+P] += gamma # for Y
                     b[idx] = 2*gamma*deltaxstar[mm_][l,s]
+                    b[idx+P] = 2*gamma*deltaystar[mm_][l,s]
 
 # Finally, E_mont
 # First, the internal points
@@ -275,12 +278,18 @@ for m in range(M):
             idx = idx_internal[m,k,s]
             idx1 = idx_internal[m,k,s-1]
             if idx>=0 and idx1>0:
-                A[idx, idx] += beta
+                A[idx, idx] += beta # for X
                 A[idx1, idx1] += beta
                 A[idx, idx1] = -beta
                 A[idx1, idx] = -beta
-                b[idx] += beta * (deltaxk[m][k,s] - deltaxk[m][k,s-1])
+                A[idx+P, idx+P] += beta # for Y
+                A[idx1+P, idx1+P] += beta
+                A[idx+P, idx1+P] = -beta
+                A[idx1+P, idx+P] = -beta
+                b[idx] += beta * (deltaxk[m][k,s] - deltaxk[m][k,s-1]) # for X
                 b[idx1] -= beta * (deltaxk[m][k,s] - deltaxk[m][k,s-1])
+                b[idx+P] += beta * (deltayk[m][k,s] - deltayk[m][k,s-1]) # for Y
+                b[idx1+P] -= beta * (deltayk[m][k,s] - deltayk[m][k,s-1])
 
 # Then the touch points:
 print('Constructing matrix - E_mont,touch')
@@ -293,14 +302,45 @@ for m in range(M):
                 idx = idx_touch[mm_][k,s]
                 idx1 = idx_touch[mm_][k,s-1]
                 if idx>=0 and idx1>0:
-                    A[idx, idx] += betap
+                    A[idx, idx] += betap # for X
                     A[idx1, idx1] += betap
                     A[idx, idx1] = -betap
                     A[idx1, idx] = -betap
-                    b[idx] += betap * (deltaxt[mm_][k,s] - deltaxt[mm_][k,s-1])
-                    b[idx1] -= betap * (deltaxt[mm_][k,s] - deltaxt[mm_][k,s-1])
+                    A[idx+P, idx+P] += betap # for Y
+                    A[idx1+P, idx1+P] += betap
+                    A[idx+P, idx1+P] = -betap
+                    A[idx1+P, idx+P] = -betap
+                    b[idx] += betap * (deltaxt[mm_][k,s]
+                                       - deltaxt[mm_][k,s-1]) # for X
+                    b[idx1] -= betap * (deltaxt[mm_][k,s]
+                                        - deltaxt[mm_][k,s-1])
+                    b[idx+P] += betap * (deltayt[mm_][k,s]
+                                         - deltayt[mm_][k,s-1]) # for Y
+                    b[idx1+P] -= betap * (deltayt[mm_][k,s]
+                                          - deltayt[mm_][k,s-1])
 
 # Seriously. Is that it?
 print('Solving matrix')
 A1 = scipy.sparse.csr_matrix(A)
-Delx1 = scipy.sparse.linalg.spsolve(A, b)
+Delxy = scipy.sparse.linalg.spsolve(A, b)
+Delx = Delxy[:P]
+Dely = Delxy[P:]
+
+print('Interpreting results - intra-slice')
+# Let's see how well we are doing by comparing our results with desiderata
+Delxstar = {}
+Delystar = {}
+for m in range(M):
+    for m_ in range(m+1, M):
+        mm_ = (m,m_)
+        L = LL[m,m_]
+        if L>0:
+            Delxstar[mm_] = np.zeros(L,S) + np.nan
+            Delystar[mm_] = np.zeros(L,S) + np.nan
+            for l in range(L):
+                for s in range(S):
+                    idx = idx_touch[mm_][l,s]
+                    if idx>=0:
+                        Delxstar[mm_][l,s] = Delx[idx]
+                        Delystar[mm_][l,s] = Dely[idx]
+                        

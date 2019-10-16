@@ -130,10 +130,10 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     dy += dybase
 
     db.exe(f'''insert into montagealignattouchq5relhp 
-    (r,m,s,ix,iy,x,y,
+    (r,m,s,ix,iy,x,y,m2,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
     values
-    ({r},{m},{s},{ix},{iy},{x},{y},
+    ({r},{m},{s},{ix},{iy},{x},{y},{m2},
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
         

@@ -89,6 +89,12 @@ def alignmanysubtiles(r, m, ix, iy):
                 {dxb[s]},{dyb[s]},{sxb[s]},{syb[s]},{snrb[s]})''')
 
 def queuealignmontage(r, m):
+    cnt = db.sel(f'''select count(1) from montagealignq5relhp
+    where r={r} and m={m}''')[0][0]
+    N = ri.nslices(r) * 25
+    if cnt==N:
+        return
+    print(f'Considering run {r} montage {m}: {cnt}<{N}')
     for ix in range(5):
         for iy in range(5):
             alignmanysubtiles(r, m, ix, iy)
@@ -97,6 +103,11 @@ maketable()
     
 for r0 in range(ri.nruns()):
     r  = r0 + 1
-    for m in range(ri.nmontages(r)):
-        queuealignmontage(r, m)
+    cnt = db.sel(f'''select count(1) from montagealignq5relhp
+    where r={r}''')[0][0]
+    N = ri.nmontages(r) * ri.nslices(r) * 25
+    if cnt < N:
+        print(f'Considering run {r}: {cnt}<{N}')
+        for m in range(ri.nmontages(r)):
+            queuealignmontage(r, m)
 
