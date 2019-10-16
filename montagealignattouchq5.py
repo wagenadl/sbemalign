@@ -28,7 +28,7 @@ import factory
 
 SHOW = False
 
-nthreads = 4
+nthreads = 12
 
 if SHOW:
     nthreads = 1
@@ -48,6 +48,7 @@ def maketable():
     iy integer,
     x float, 
     y float,
+    m2 integer,
 
     dx float,
     dy float,
@@ -68,7 +69,7 @@ baseshifts = {}
 
 def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
     r, m, s, ix, iy = subtileid
-    x,y,dx0,dy0 = row
+    x,y,dx0,dy0,m2 = row
     # dx0,dy0 are positions of original subtile in slicealignq5
     print(f'Working on r{r} m{m} s{s} {ix},{iy} ({dx0},{dy0})')
     Y,X = tileimg.shape
@@ -82,10 +83,10 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
 
     if neighborhoodimg is None:
         db.exe(f'''insert into montagealignattouchq5 
-        (r,m,s,ix,iy,x,y,
+        (r,m,s,ix,iy,x,y,m2,
         dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
         values
-        ({r},{m},{s},{ix},{iy},{x},{y},
+        ({r},{m},{s},{ix},{iy},{x},{y},{m2},
         0,0,0,0,100,
         0,0,0,0,100)''')
         return
@@ -157,11 +158,11 @@ def alignmanysubtiles(r, m, ix, iy):
             
     def saver(subtileid, tileimg, neighborhoodimg, aux):
         r,m,s,ix,iy = subtileid
-        rows1 = db.sel(f'''select x1,y1,dx0,dy0 from slicealignq5pos 
+        rows1 = db.sel(f'''select x1,y1,dx0,dy0,m2 from slicealignq5pos 
         where r={r} and m1={m} and s={s} and ix1={ix} and iy1={iy}''')
         for row in rows1:
             alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
-        rows2 = db.sel(f'''select x2,y2,dx0,dy0 from slicealignq5pos 
+        rows2 = db.sel(f'''select x2,y2,dx0,dy0,m1 from slicealignq5pos 
         where r={r} and m2={m} and s={s} and ix2={ix} and iy2={iy}''')
         for row in rows2:
             alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
