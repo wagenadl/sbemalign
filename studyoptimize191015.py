@@ -16,9 +16,9 @@ db = aligndb.DB()
 ri = db.runinfo()
 
 r = 1
-monttbl = 'montagealignq5coa'
+monttbl = 'montagealignq5relhp'
 slictbl = 'slicealignq5'
-touchtbl = 'montagealignattouchq5'
+touchtbl = 'montagealignattouchq5relhp'
 kappa = .5
 
 M = ri.nmontages(r)
@@ -48,7 +48,7 @@ ystar = {}
 deltaxstar = {}
 deltaystar = {}
 weights = {}
-
+print('Getting intra-slice shifts from db')
 for m in range(M):
     for m_ in range(m+1, M):
         mm_ = (m,m_)
@@ -60,7 +60,7 @@ for m in range(M):
             s, ix1,iy1, ix2,iy2, dx0, dy0, dx+dxb+dxc,dy+dyb+dyc, snrc
             from {slictbl}
             where r={r} and m1={m} and m2={m_} order by ix1,iy1,s''')
-        if len(s) != S*L
+        if len(s) != S*L:
             raise Exception(f'Mismatched overlap point count M{m}:{m_}')
         x1 = ix1*X + X/2 + dx0/2 - dx/2
         x2 = ix2*X + X/2 - dx0/2 + dx/2
@@ -99,6 +99,7 @@ for a in range(2):
 # Delta0 is montage shift wrt model space
 
 # Find out locations and shifts within montages - internal points
+print('Getting intra-montage shifts from db [internal]')
 xxk = {}
 yyk = {}
 deltaxk = {}
@@ -119,9 +120,10 @@ for m in range(M):
     deltaxk[m] = np.reshape(dx, SIZ)
     deltayk[m] = np.reshape(dy, SIZ)
     wei = (snr > 20).astype('float') # Hard threshold
-    weightk[m] = wei.reshape(wei, SIZ)
+    weightk[m] = np.reshape(wei, SIZ)
 
 # Find out locations and shifts within montages - touch points
+print('Getting intra-montage shifts from db [touch]')
 xxt = {}
 yyt = {}
 deltaxt = {}
@@ -156,13 +158,14 @@ Deltax = []
 Deltay = []
 
 # First, let's put in the internal points
+print('Estimating shifts for internal points')
 idx_internal = np.zeros((M,K,S), dtype=int) - 1
 if S>1:
     for m in range(M):
         for k in range(KK[m]):
             for s in range(S):
                 if weightk[m][k,s] > 0:
-                    idx_internal(m,k,s) = len(ptsx)
+                    idx_internal[m,k,s] = len(ptsx)
                     ptsx.append(xxk[m][k])
                     ptsy.append(xxy[m][k])
                     if s==0:
@@ -178,16 +181,17 @@ if S>1:
                                                             +deltayk[m][k,s+1]))
 
 # Now, let's put in touch points
+print('Estimating shifts for touch points')
 idx_touch = {}
 for m in range(M):
     for m_ in range(M):
         L = LL[m,m_]
         idx = np.zeros((M,L,S), dtype=int)  - 1
-        for l in range(L)
+        for l in range(L):
             for s in range(S):
                 if weightt[mm_][l,s] + weights[mm_][l,s] > 0:
                     mm_ = (m,m_)
-                    idx(m,l,s) = len(ptsx)
+                    idx[m,l,s] = len(ptsx)
                     ptsx.append(xstar[mm_][l,s])
                     ptsy.append(ystar[mm_][l,s])
                     delx = deltaxstar[mm_] - Delta0[m,0]
@@ -239,6 +243,7 @@ and p indices.
 '''
 
 # Let's do E_elast, only X for the moment
+print('Constructing matrix - E_elast')
 alpha = .1
 for m in range(M):
     for k in range(KK[m]):
@@ -248,6 +253,7 @@ for m in range(M):
                 A[idx,idx] = alpha
 
 # Next, E_slic
+print('Constructing matrix - E_slice')
 gamma = 1
 for m in range(M):
     for m_ in range(M):
@@ -261,6 +267,7 @@ for m in range(M):
 
 # Finally, E_mont
 # First, the internal points
+print('Constructing matrix - E_mont,internal')
 beta = 1
 for m in range(M):
     for k in range(KK[m]):
@@ -274,7 +281,9 @@ for m in range(M):
                 A[idx1, idx] = -beta
                 b[idx] += beta * (deltaxk[m][k,s] - deltaxk[m][k,s-1])
                 b[idx1] -= beta * (deltaxk[m][k,s] - deltaxk[m][k,s-1])
+
 # Then the touch points:
+print('Constructing matrix - E_mont,touch')
 betap = 1
 for m in range(M):
     for m_ in range(M_):
@@ -292,5 +301,6 @@ for m in range(M):
                     b[idx1] -= betap * (deltaxt[mm_][k,s] - deltaxt[mm_][k,s-1])
 
 # Seriously. Is that it?
+print('Solving matrix')
 A1 = scipy.sparse.csr_matrix(A)
 Delx1 = scipy.sparse.linalg.spsolve(A, b)

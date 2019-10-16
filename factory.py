@@ -12,24 +12,27 @@ class Factory:
         self.nthr = nthr
         self.fails = {}
         def wrkr():
-            while True:
-                tsk = self.qu.get()
-                if tsk is None:
+            try:
+                while True:
+                    tsk = self.qu.get()
+                    if tsk is None:
+                        self.qu.task_done()
+                        #print('Worker done')
+                        return
+                    try:
+                        #print('Retrieved task', tsk)
+                        self.produce(*tsk)
+                    except Exception  as e:
+                        ei = sys.exc_info()
+                        tb = ei[2]
+                        self.fails[tsk] = (e, tb)
+                        print("Traceback:")
+                        traceback.print_tb(tb)
+                        print("Exception:\n ", e)
+                        print('FAILED TO PRODUCE', tsk)
                     self.qu.task_done()
-                    #print('Worker done')
-                    return
-                try:
-                    #print('Retrieved task', tsk)
-                    self.produce(*tsk)
-                except Exception  as e:
-                    ei = sys.exc_info()
-                    tb = ei[2]
-                    self.fails[tsk] = (e, tb)
-                    print("Traceback:")
-                    traceback.print_tb(tb)
-                    print("Exception:\n ", e)
-                    print('FAILED TO PRODUCE', tsk)
-                self.qu.task_done()
+            except KeyboardInterrupt:
+                sys.exit(1)
         self.thr = []
         self.qu = queue.Queue(nthr)
         for n in range(nthr):
@@ -75,7 +78,10 @@ class Factory:
     def request(self, *tsk):
         '''Clients call this to add a task to the queue.'''
         #print('Scheduling', tsk)
-        self.qu.put(tsk)
+        try:
+            self.qu.put(tsk)
+        except KeyboardInterrupt:
+            sys.exit(1)
 
     def failures(self):
         '''At the end, return dict of failed requests.'''
