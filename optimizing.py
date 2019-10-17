@@ -113,7 +113,7 @@ def montageposition(deltas):
     dy = sumy / n
     return (dx, dy)
 
-def _montagedeltas(r, where, tbl, name):    
+def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):    
     S = ri.nslices(r)
     N = db.sel(f'''select count(*) from {tbl}
                where {where} and s=0''')[0][0]
@@ -127,14 +127,14 @@ def _montagedeltas(r, where, tbl, name):
     res = Delta(SHP)
     if N==0:
         return res
-    (s, ix,iy, x0,y0, dx,dy, snr) = db.vsel(f'''select
-        s, ix,iy, dx, dy, dx+dxb,dy+dyb, snrb
+    (s, ix,iy, x,y, dx,dy, snr) = db.vsel(f'''select
+        s, ix,iy, {xcol}, {ycol}, dx+dxb,dy+dyb, snrb
         from {tbl}
         where {where} order by s,iy,ix''')
     if len(s) != S*NY*NX:
         raise Exception(f'Mismatched point count for montage tbl M{m}')
-    res.xx = np.reshape(X*ix + X/2 - x0, SHP) # THIS IS NOT CORRECT FOR EDGE
-    res.yy = np.reshape(Y*iy + Y/2 - y0, SHP) # IS THIS CORRECT??
+    res.xx = np.reshape(X*ix + x, SHP)
+    res.yy = np.reshape(Y*iy + y, SHP)
     res.dx = np.reshape(dx, SHP)
     res.dy = np.reshape(dy, SHP)
     res.snr = np.reshape(snr, SHP)
@@ -148,7 +148,8 @@ def intradeltas(r, m, tbl):
     the corresponding point (xx,yy). That is, a pixel in (r,m,s) at
     (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in montage-global
     coordinates.'''
-    return _montagedeltas(r, f'r={r} and m={m}', tbl, f'R{r} M{m}')
+    return _montagedeltas(r, f'r={r} and m={m}', tbl, name=f'R{r} M{m}',
+                          xcol=f'{X/2}-dx', ycol=f'{Y/2}-dy')
 
 def edgedeltas(r, m, m2, tbl):
     '''Finds the points where tiles in montage m in run r were compared
@@ -165,7 +166,8 @@ def edgedeltas(r, m, m2, tbl):
     of CROSSDELTAS(r, m, m2, tbl1) with the appropriate table.
     Note that the results here pertain to points in montage m, not in m2.'''
     return _montagedeltas(r, f'r={r} and m={m} and m2={m2}', tbl,
-                          f'R{r} M{m}:{m2}')
+                          name=f'R{r} M{m}:{m2}',
+                          xcol='x', ycol='y')
 
 class AllDeltas:
     def __init__(self, r, crosstbl=None, intratbl=None, edgetbl=None):
