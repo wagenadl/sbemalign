@@ -14,7 +14,7 @@ import scipy.sparse.linalg
 import optimizing
 import factory
 
-TEST = True
+TEST = False
 
 nthreads = 12
 
@@ -61,7 +61,8 @@ def maketable():
 def insertintodb(r, m, delta, dbcon):
     [S, NY, NX] = delta.xx.shape
     for s in range(S):
-        print(f'Inserting R{r} M{m} S{s}')
+        if TEST:
+            print(f'Inserting R{r} M{m} S{s}')
         for ny in range(NY):
             for nx in range(NX):
                 dbcon.execute(f'''insert into {outtbl}
