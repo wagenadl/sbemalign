@@ -465,6 +465,7 @@ class UDelta:
         self.dx[np.isnan(self.dy)] = np.nan
         self.xx[np.isnan(self.dx)] = np.nan
         self.yy[np.isnan(self.dx)] = np.nan
+        self.supported = np.logical_not(np.isnan(self.dx))
         self.infermissingxx()
         self.infermissingyy()
         self.dx = self.infermissing1d(self.dx)
