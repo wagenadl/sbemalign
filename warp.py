@@ -56,7 +56,7 @@ def copyWithMask(mdl, img, msk):
 if __name__=='__main__':
     import swiftir
     import pyqplot as qp
-    ifn = '/home/wagenaar/Desktop/stuff/vsdbuildup/top-10.jpg'
+    ifn = 'test-top-10.jpg'
     img = swiftir.loadImage(ifn)
     xmodel = np.array([380, 390, 680, 650])
     ymodel = np.array([1150, 1380, 1390, 1140])
@@ -83,8 +83,9 @@ if __name__=='__main__':
     
     qp.figure('/tmp/s3')
     msk = createClipMask(xmodel, ymodel, x0,y0, X,Y)
-    qp.imsc(msk)
+    qp.imsc(msk, xx=np.arange(X), yy=np.arange(Y))
     
     dst = np.zeros((Y,X), dtype='uint8') + 128
+    dst = 255-mdl
     qp.figure('/tmp/s4')
-    qp.imsc(copyWithMask(dst, mdl, msk))
+    qp.imsc(copyWithMask(dst, mdl, msk), xx=np.arange(X), yy=np.arange(Y))

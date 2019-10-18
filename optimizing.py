@@ -99,19 +99,34 @@ def crossdeltas(r, m1, m2, tbl):
     return (res1, res2)
 
 def montageposition(deltas):
-    '''Given a list of cross Deltas of one montage relative to all the others,
-    calculates the average displacement. Returns a (x, y) pair.'''
-    sumx = 0
-    sumy = 0
-    n = 0
-    for delta in deltas:
-        if delta.dx.size>0:
-            sumx += np.mean(delta.dx)
-            sumy += np.mean(delta.dy)
-            n += 1
-    dx = sumx / n
-    dy = sumy / n
-    return (dx, dy)
+    '''Given a list of matrix of crossdeltas, determine optimal positions.
+    This function handles one dimension at a time.
+    DELTAS must be an MxM-matrix with nan entries where no data exists.
+    Result is an M-vector.'''
+    # We want to optimize E0 = sum_(defined pairs ij) (x_i - x_j - delta_ij)^2
+    # For stability, we add to that E1 = epsilon sum_i x_i^2.
+    # Note that
+    # dE0/dx_i = 2 sum_(defined pairs with i) (x_i - x_j - delta_ij)
+    # and that
+    # dE1/dx_i = 2 epsilon x_i
+    # Thus, we can solve this with a matrix eqn. of the form A x - b = 0,
+    # where A_ii = 2 epsilon + 2 sum_j(pair ij exists)
+    # A_ij = - 2 I(pair ij exists)
+    # b_i = 2 sum_j delta_ij I(pair ij exists)
+    # (I am confused about the factor two, but I know it is the same confusion
+    # for A and b, so it doesn't matter except for the scale of E1.)
+    M = deltas.shape[0]
+    print(deltas)
+    A = np.zeros((M,M)) + .001 # that's our epsilon
+    b = np.zeros(M)
+    for m in range(M):
+        for m_ in range(M):
+            if not np.isnan(deltas[m,m_]):
+                A[m,m] += 1
+                A[m,m_] -= 1
+                b[m] += deltas[m,m_] - deltas[m_,m]
+    x = np.linalg.solve(A, b)
+    return x
 
 def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):    
     S = ri.nslices(r)
@@ -132,7 +147,7 @@ def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):
         from {tbl}
         where {where} order by s,iy,ix''')
     if len(s) != S*NY*NX:
-        raise Exception(f'Mismatched point count for montage tbl M{m}')
+        raise Exception(f'Mismatched point count for {name} in {tbl}')
     res.xx = np.reshape(X*ix + x, SHP)
     res.yy = np.reshape(Y*iy + y, SHP)
     res.dx = np.reshape(dx, SHP)
@@ -188,12 +203,22 @@ class AllDeltas:
                 d1, d2 = crossdeltas(self.r, m, m_, tbl)
                 self.cross[(m,m_)] = d1
                 self.cross[(m_,m)] = d2
+
+    def makemontpos(self):
+        avgshiftx = np.zeros((self.M,self.M)) + np.nan
+        avgshifty = np.zeros((self.M,self.M)) + np.nan
+        for m in range(self.M):
+            for m_ in range(self.M):
+                crs = self.cross[(m,m_)]
+                n = crs.dx.size
+                if n>0:
+                   avgshiftx[m,m_] = np.mean(crs.dx)
+                   avgshifty[m,m_] = np.mean(crs.dy)
+        posx = montageposition(avgshiftx)
+        posy = montageposition(avgshifty)
         self.montpos = []
         for m in range(self.M):
-            dels = []
-            for m_ in range(self.M):
-                dels.append(self.cross[(m,m_)])
-            self.montpos.append(montageposition(dels))
+            self.montpos.append((posx[m], posy[m]))
 
     def pullintra(self, tbl):
         self.intra = [] # internal points
@@ -329,7 +354,7 @@ class Matrix:
                                 self.b[idx] += 2*gamma \
                                         * (dcrs.dx[s,ny,nx] - montpos[0])
                                 self.b[idx+self.P] += 2*gamma \
-                                        * (dcrs.dy[s,ny,nx] -montpos[1])
+                                        * (dcrs.dy[s,ny,nx] - montpos[1])
 
     def add_E_intra(self, ad, beta):
         for m in range(ad.M):
