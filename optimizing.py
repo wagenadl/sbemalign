@@ -256,6 +256,8 @@ For instance, dE_cross/d dx_tsmm = 2gamma [dx_tsmm - deltaxstar_ksmm]
 so there is a diagonal entry in A: 2gamma, and an entry in b: 2gamma deltaxstar.
 Entries need to be added from the various terms in E.
 
+Since x and y are completely independent, we'll solve them in separate steps.
+
 First, we need to construct an index system to convert between k,m / t,m / t,m,m'
 and p indices.
     '''
@@ -307,23 +309,25 @@ class Index:
         return (intra, p)
         
 class Matrix:
-    def __init__(self, ad, idx, w_cross=1, w_intra=1, w_edge=1, w_elast=.01):
+    def __init__(self, ad, idx, dim='x',
+                 w_cross=1, w_intra=1, w_edge=1, w_elast=.01):
         # ad must be of type AllDeltas
         # idx must be of type Index
+        # dim must be either "x" or "y".
         self.idx = idx
         self.P = idx.P
-        self.diag = np.zeros(2*self.P)
-        self.upper = np.zeros(2*self.P-1)
-        self.lower = np.zeros(2*self.P-1)
-        self.b = np.zeros(2*self.P)
-        self.add_E_elast(ad, w_elast)
-        self.add_E_cross(ad, w_cross)
-        self.add_E_intra(ad, w_intra)
-        self.add_E_edge(ad, w_edge)
+        self.diag = np.zeros(self.P)
+        self.upper = np.zeros(self.P-1)
+        self.lower = np.zeros(self.P-1)
+        self.b = np.zeros(self.P)
+        self.add_E_elast(ad, dim, w_elast)
+        self.add_E_cross(ad, dim, w_cross)
+        self.add_E_intra(ad, dim, w_intra)
+        self.add_E_edge(ad, dim, w_edge)
         self.A = scipy.sparse.diags([self.diag,self.upper,self.lower], \
                                     [0,1,-1], format='csr')
 
-    def add_E_elast(self, ad, alpha):
+    def add_E_elast(self, ad, dim, alpha):
         for m in range(ad.M):
             S,NY,NX = ad.intra[m].shape()
             for s in range(S):
@@ -331,18 +335,17 @@ class Matrix:
                     for nx in range(NX):
                         idx = self.idx.intra[m][s,ny,nx]
                         if idx>=0:
-                            self.diag[idx] += 2*alpha # for X
-                            self.diag[idx+self.P] += 2*alpha # for Y
+                            self.diag[idx] += 2*alpha
             # Need to add elastic constraints to edge points also?
             
-    def add_E_cross(self, ad, gamma):
+    def add_E_cross(self, ad, dim, gamma):
         for m in range(ad.M):
             for m_ in range(ad.M):
                 mm = (m,m_)
                 self.add_one_cross(ad.cross[(m,m_)], self.idx.edge[m][m_],
-                                   ad.montpos[m], gamma)
+                                   ad.montpos[m], dim, gamma)
 
-    def add_one_cross(self, dcrs, icrs, montpos, gamma):
+    def add_one_cross(self, dcrs, icrs, montpos, dim, gamma):
                 S,NY,NX = dcrs.shape()
                 for s in range(S):
                     for ny in range(NY):
@@ -350,17 +353,17 @@ class Matrix:
                             idx = icrs[s,ny,nx]
                             if idx>=0:
                                 self.diag[idx] += 2*gamma # for X
-                                self.diag[idx+self.P] += 2*gamma # for Y
-                                self.b[idx] += 2*gamma \
-                                        * (dcrs.dx[s,ny,nx] - montpos[0])
-                                self.b[idx+self.P] += 2*gamma \
-                                        * (dcrs.dy[s,ny,nx] - montpos[1])
+                                if dim=='x':
+                                    dd = dcrs.dx[s,ny,nx] - montpos[0]
+                                else:
+                                    dd = dcrs.dy[s,ny,nx] - montpos[1]
+                                self.b[idx] += 2*gamma * dd
 
-    def add_E_intra(self, ad, beta):
+    def add_E_intra(self, ad, dim,  beta):
         for m in range(ad.M):
-            self.add_one_intra(ad.intra[m], self.idx.intra[m], beta)
+            self.add_one_intra(ad.intra[m], self.idx.intra[m], dim, beta)
             
-    def add_one_intra(self, dintra, iintra, beta):
+    def add_one_intra(self, dintra, iintra, dim, beta):
         S,NY,NX = dintra.shape()
         for s in range(1,S):
             for ny in range(NY):
@@ -371,29 +374,24 @@ class Matrix:
                         if idx1 != idx-1:
                             raise Exception(f'Expected idx to match at' \
                                             + f'{m},{k},{s}')
-                        self.diag[idx] += 2*beta # for X
+                        self.diag[idx] += 2*beta
                         self.diag[idx1] += 2*beta
                         self.upper[idx1] += -2*beta
                         self.lower[idx1] += -2*beta
-                        self.diag[idx+self.P] += 2*beta # for Y
-                        self.diag[idx1+self.P] += 2*beta
-                        self.upper[idx1+self.P] += -2*beta
-                        self.lower[idx1+self.P] += -2*beta
-                        difx = dintra.dx[s,ny,nx] \
-                               - dintra.dx[s-1,ny,nx]
-                        dify = dintra.dy[s,ny,nx] \
-                               - dintra.dy[s-1,ny,nx]
-                        self.b[idx] += 2*beta * difx
-                        self.b[idx1] -= 2*beta * difx
-                        self.b[idx+self.P] += 2*beta * dify
-                        self.b[idx1+self.P] -= 2*beta * dify
+                        if dim=='x':
+                            dd = dintra.dx[s,ny,nx] - dintra.dx[s-1,ny,nx]
+                        else:
+                            dd = dintra.dy[s,ny,nx] - dintra.dy[s-1,ny,nx]
+                        self.b[idx] += 2*beta * dd
+                        self.b[idx1] -= 2*beta * dd
 
-    def add_E_edge(self, ad, beta):
+    def add_E_edge(self, ad, dim, beta):
         for m in range(ad.M):
             for m_ in range(ad.M):
-                self.add_one_edge(ad.edge[m][m_], self.idx.edge[m][m_], beta)
+                self.add_one_edge(ad.edge[m][m_], self.idx.edge[m][m_],
+                                  dim, beta)
                 
-    def add_one_edge(self, dedge, iedge, beta):
+    def add_one_edge(self, dedge, iedge, dim, beta):
         S,NY,NX = dedge.shape()
         for s in range(1,S):
             for ny in range(NY):
@@ -401,29 +399,23 @@ class Matrix:
                     idx = iedge[s,ny,nx]
                     idx1 = iedge[s-1,ny,nx]
                     if idx>=0 and idx1>=0:
-                        self.diag[idx] += 2*beta # for X
+                        self.diag[idx] += 2*beta
                         self.diag[idx1] += 2*beta
                         self.upper[idx1] += -2*beta
                         self.lower[idx1] += -2*beta
-                        self.diag[idx+self.P] += 2*beta # for Y
-                        self.diag[idx1+self.P] += 2*beta
-                        self.upper[idx1+self.P] += -2*beta
-                        self.lower[idx1+self.P] += -2*beta
-                        difx = dedge.dx[s,ny,nx] - dedge.dx[s-1,ny,nx]
-                        dify = dedge.dy[s,ny,nx] - dedge.dy[s-1,ny,nx]
-                        self.b[idx] += 2*beta * difx
-                        self.b[idx1] -= 2*beta * difx
-                        self.b[idx+self.P] += 2*beta * dify
-                        self.b[idx1+self.P] -= 2*beta * dify
+                        if dim=='x':
+                            dd = dedge.dx[s,ny,nx] - dedge.dx[s-1,ny,nx]
+                        else:
+                            dd = dedge.dy[s,ny,nx] - dedge.dy[s-1,ny,nx]
+                        self.b[idx] += 2*beta * dd
+                        self.b[idx1] -= 2*beta * dd
 
 class Solution:
-    def __init__(self, ad, mat):
-        dxy = scipy.sparse.linalg.spsolve(mat.A, mat.b)
-        P = len(mat.b)//2
-        dx = dxy[:P]
-        dy = dxy[P:]
-        self.intra = self.extractintra(ad.intra, mat.idx.intra, dx, dy)
-        self.edge = self.extractedge(ad.edge, mat.idx.edge, dx, dy)
+    def __init__(self, ad, matx, maty):
+        dx = scipy.sparse.linalg.spsolve(matx.A, matx.b)
+        dy = scipy.sparse.linalg.spsolve(maty.A, maty.b)
+        self.intra = self.extractintra(ad.intra, matx.idx.intra, dx, dy)
+        self.edge = self.extractedge(ad.edge, matx.idx.edge, dx, dy)
         
     def extractintra(self, adintra, idxintra, dx, dy):
         dlts = []
