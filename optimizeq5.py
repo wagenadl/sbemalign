@@ -52,9 +52,8 @@ def maketable():
     db.exe(f'''create table if not exists {roughtbl} (
     r integer,
     m integer,
-    s integer,
     x float,
-    y float,
+    y float
     )''')
     
 
@@ -78,10 +77,9 @@ def insertintodb(r, m, delta, dbcon):
                 ''')
 
 def insertintorough(r, m, pos, dbcon):
-    S = len(pos)
-    for s in range(S):
-        print(f'Inserting rough R{r} M{m} S{s}')
-
+    print(f'Inserting rough R{r} M{m}')
+    dbcon.execute(f'''insert into {roughtbl}
+    (r,m,x,y) values ({r},{m},{pos[0]},{pos[1]})''')
 
 def optimizerun(r):
     print(f'Working on R{r}')
@@ -92,6 +90,14 @@ def optimizerun(r):
                                   edgetbl=edgetbl)
     print(f'Calculating overall montage positions R{r}')
     deltas.makemontpos()
+    
+    print(f'Storing  overall montage positions R{r}')
+    with db.db:
+        with db.db.cursor() as c:
+            c.execute(f'delete from {roughtbl} where r={r}')
+            for m in range(len(deltas.montpos)):
+                insertintorough(r, m, deltas.montpos[m], c)
+    return # Since we have already done the rest for now
     
     print(f'Creating index R{r}')
     idx = optimizing.Index(deltas)
@@ -117,6 +123,6 @@ fac = factory.Factory(nthreads)
 for r0 in range(ri.nruns()):
     r = r0 + 1
     cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
-    if cnt < 7*7*ri.nmontages(r)*ri.nslices(r):
+    if cnt <= 7*7*ri.nmontages(r)*ri.nslices(r):
         fac.request(optimizerun, r)
         
