@@ -22,6 +22,7 @@ crosstbl = 'slicealignq5'
 intratbl='montagealignq5relhp'
 edgetbl='montagealignattouchq5relhp'
 outtbl = 'optimizeq5'
+roughtbl = 'roughq5pos'
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -30,7 +31,8 @@ if TEST:
     nthreads = 1
 
 def droptable():
-    db.exe(f'drop table {outtbl}')
+    db.nofail(f'drop table {outtbl}')
+    db.nofail(f'drop table {roughtbl}')
 
 def maketable():
     db.exe(f'''create table if not exists {outtbl} (
@@ -46,6 +48,15 @@ def maketable():
     dy float,
     supported boolean
     )''')
+
+    db.exe(f'''create table if not exists {roughtbl} (
+    r integer,
+    m integer,
+    s integer,
+    x float,
+    y float,
+    )''')
+    
 
 def insertintodb(r, m, delta, dbcon):
     [S, NY, NX] = delta.xx.shape
@@ -64,6 +75,12 @@ def insertintodb(r, m, delta, dbcon):
                 {delta.dy[s,ny,nx]},
                 {delta.supported[s,ny,nx]})
                 ''')
+
+def insertintorough(r, m, pos, dbcon):
+    S = len(pos)
+    for s in range(S):
+        print(f'Inserting rough R{r} M{m} S{s}')
+
 
 def optimizerun(r):
     print(f'Working on R{r}')
