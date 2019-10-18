@@ -116,7 +116,6 @@ def montageposition(deltas):
     # (I am confused about the factor two, but I know it is the same confusion
     # for A and b, so it doesn't matter except for the scale of E1.)
     M = deltas.shape[0]
-    print(deltas)
     A = np.zeros((M,M)) + .001 # that's our epsilon
     b = np.zeros(M)
     for m in range(M):
@@ -450,12 +449,79 @@ class Solution:
 
 class UDelta:
     def __init__(self, SHP):
+        # SHP is (S, NY, NX), where NY = 2 + (number of vertical tiles)
+        # and NX = 2 + (number of horizontal tiles).
+        # That's because we include the edge positions. (Red dots in
+        # figure on E&R p. 1577.)
         self.xx = np.zeros(SHP) + np.nan
         self.yy = np.zeros(SHP) + np.nan
         self.dx = np.zeros(SHP) + np.nan
         self.dy = np.zeros(SHP) + np.nan
+
+    def infermissing(self):
+        # For now, this operates entirely within a tile
+        # If anything is missing, we don't trust other data, so:
+        self.dy[np.isnan(self.dx)] = np.nan
+        self.dx[np.isnan(self.dy)] = np.nan
+        self.xx[np.isnan(self.dx)] = np.nan
+        self.yy[np.isnan(self.dx)] = np.nan
+        self.infermissingxx()
+        self.infermissingyy()
+        self.dx = self.infermissing1d(self.dx)
+        self.dy = self.infermissing1d(self.dy)
+
+    def infermissingxx(self):
+        S,NY,NX = self.xx.shape
+        for s in range(S):
+            xx = self.xx[s,:,:]
+            for ix in range(NX):
+                isn = np.isnan(xx[:,ix])
+                if np.all(isn):
+                    if ix==0:
+                        xx[:,ix] = 0
+                    else:
+                        xx[:,ix] = NX * X
+                else:
+                    xx[isn, ix] = np.mean(xx[np.logical_not(isn), ix])
+            self.xx[s,:,:] = xx
+
+    def infermissingyy(self):
+        S,NY,NX = self.yy.shape
+        for s in range(S):
+            yy = self.yy[s,:,:]
+            for iy in range(NY):
+                isn = np.isnan(yy[iy,:])
+                if np.all(isn):
+                    if iy==0:
+                        yy[iy,:] = 0
+                    else:
+                        yy[iy,:] = NX * X
+                else:
+                    yy[iy, isn] = np.mean(yy[iy, np.logical_not(isn)])
+            self.yy[s,:,:] = yy
+
+    def infermissing1d(self, dd):
+        S,NY,NX = self.xx.shape
+        for s in range(S):
+            d0 = dd[s,:,:]
+            d1 = d0.copy() 
+            for ny in range(NY):
+                for nx in range(NX):
+                    if np.isnan(d0[ny,nx]):
+                        dist2 = (self.xx[s,:,:] - self.xx[s,ny,nx])**2 \
+                                + (self.yy[s,:,:] - self.yy[s,ny,nx])**2
+                        dist2[np.isnan(d0)] = np.inf
+                        dist2 /= np.min(dist2)
+                        wei = np.exp(-dist2)
+                        use = np.logical_not(np.isnan(d0))
+                        d1[ny,nx] = np.sum(wei[use]*d0[use]) / np.sum(wei[use])
+            dd[s,:,:] = d1
+        return dd
     
 class UnifiedSolution:
+    # Only relevant member is "deltas" which is an M-long list of UDeltas.
+    # Use infermissing() method to replace nans with reasonable estimates
+    # based on neighbors.
     def __init__(self, soln):
         self.deltas = []
         M = len(soln.intra)
@@ -469,6 +535,11 @@ class UnifiedSolution:
                     dlt = self.addedgedelta(dlt, soln.edge[m][m_], m<m_)
 
             self.deltas.append(dlt)
+
+    def infermissing(self):
+        # For now, this operates entirely within a tile
+        for dlt in self.deltas:
+            dlt.infermissing()
             
     def makeintradelta(self, soln):
         (S,NY,NX) = soln.shape()
