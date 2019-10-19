@@ -45,13 +45,20 @@ def createClipMask(xmodel, ymodel, x0,y0, w,h):
     cv2.fillPoly(msk, np.array([pts]), color=255)
     return msk
 
-def copyWithMask(mdl, img, msk):
+def copyWithMask(mdl, img, msk, x0, y0):
     if mdl.dtype != np.uint8:
-        mdl = mdl.astype(np.uint8)
+        raise Exception('model must be uint8')
     if img.dtype != np.uint8:
         img = img.astype(np.uint8)
-    return np.bitwise_or(np.bitwise_and(img, msk),
-                          np.bitwise_and(mdl, np.bitwise_not(msk)))
+    h,w = img.shape
+    outxx = slice(x0, x0+w)
+    outyy = slice(y0, y0+h)
+    print(mdl.shape, img.shape, msk.shape)
+    print(outxx, outyy)
+    np.bitwise_or(np.bitwise_and(img, msk[outyy,outxx]),
+                  np.bitwise_and(mdl[outyy,outxx],
+                                 np.bitwise_not(msk[outyy,outxx])),
+                  mdl[outyy,outxx])
 
 if __name__=='__main__':
     import swiftir
@@ -88,4 +95,5 @@ if __name__=='__main__':
     dst = np.zeros((Y,X), dtype='uint8') + 128
     dst = 255-mdl
     qp.figure('/tmp/s4')
-    qp.imsc(copyWithMask(dst, mdl, msk), xx=np.arange(X), yy=np.arange(Y))
+    copyWithMask(dst, mdl, msk, 0, 0)
+    qp.imsc(dst, xx=np.arange(X), yy=np.arange(Y))
