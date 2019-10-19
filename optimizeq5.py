@@ -97,7 +97,6 @@ def optimizerun(r):
             c.execute(f'delete from {roughtbl} where r={r}')
             for m in range(len(deltas.montpos)):
                 insertintorough(r, m, deltas.montpos[m], c)
-    return # Since we have already done the rest for now
     
     print(f'Creating index R{r}')
     idx = optimizing.Index(deltas)

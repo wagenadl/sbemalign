@@ -342,9 +342,10 @@ class Matrix:
             for m_ in range(ad.M):
                 mm = (m,m_)
                 self.add_one_cross(ad.cross[(m,m_)], self.idx.edge[m][m_],
-                                   ad.montpos[m], dim, gamma)
+                                   ad.montpos[m], ad.montpos[m_],
+                                   dim, gamma)
 
-    def add_one_cross(self, dcrs, icrs, montpos, dim, gamma):
+    def add_one_cross(self, dcrs, icrs, montpos, montpos2, dim, gamma):
                 S,NY,NX = dcrs.shape()
                 for s in range(S):
                     for ny in range(NY):
@@ -353,9 +354,11 @@ class Matrix:
                             if idx>=0:
                                 self.diag[idx] += 2*gamma # for X
                                 if dim=='x':
-                                    dd = dcrs.dx[s,ny,nx] - montpos[0]
+                                    dmont = montpos[0] - montpos2[0]
+                                    dd = dcrs.dx[s,ny,nx] - dmont/2
                                 else:
-                                    dd = dcrs.dy[s,ny,nx] - montpos[1]
+                                    dmont = montpos[1] - montpos2[1]
+                                    dd = dcrs.dy[s,ny,nx] - dmont/2
                                 self.b[idx] += 2*gamma * dd
 
     def add_E_intra(self, ad, dim,  beta):
