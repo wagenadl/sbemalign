@@ -10,8 +10,8 @@ import warp
 import pyqplot as qp
 import numpy as np
 
-r = 1
-s = 300
+r = 21
+s = 100
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -39,11 +39,6 @@ def fullq5img(r, m, s):
             img[H*iy:H*(iy+1), W*ix:W*(ix+1)] = subimg
     return img
 
-def roundedquad(xx, yy):
-    # xx,yy must be presented in order tl, tr, bl, br
-    # results are presented in order tl, tr, br, bl
-    return (np.array([int(xx[0]), int(xx[1]+1), int(xx[3]+1), int(xx[2])]),
-            np.array([int(yy[0]), int(yy[1]), int(yy[3]+1), int(yy[2])+1]))
 
 def renderq5quad(mdl, img, r, m, s, nx, ny, x0, y0, xm, ym):
     (nx1, ny1, x, y, dx, dy) = db.vsel(f'''select nx, ny, x, y, dx, dy
@@ -57,10 +52,16 @@ def renderq5quad(mdl, img, r, m, s, nx, ny, x0, y0, xm, ym):
     ximage = x - dx
     yimage = y - dy
     mdl2img = warp.getPerspective(xmodel, ymodel, ximage, yimage)
-    ovr, xl, yt = warp.warpPerspective(img, mdl2img) # This is deeply suboptimal
-    # .. because we only need a small part of it. But let me first check this.
-    xmr, ymr = roundedquad(xmodel, ymodel)
-    msk = warp.createClipMask(xmr, ymr, x0, y0, W, H)
+    print(f'renderq5quad r{r} m{m} s{s} nx{nx} ny{ny}')
+    print(f'x0{x0} y0{y0} xm{xm} ym{ym}')
+    print('x = ', x)
+    print('y = ', y)
+    print('dx = ', dx)
+    print('dy = ', dy)
+    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmodel, ymodel, mdl2img)
+    print('ovr.shape', ovr.shape)
+    print('msk.shape', msk.shape)
+    print('mdl.shape', mdl.shape)
     warp.copyWithMask(mdl, ovr, msk, xl-x0, yt-y0)
 
 def renderq5(mdl, r, m, s, x0, y0):
@@ -74,6 +75,9 @@ x0, y0, x1, y1 = runextent(r)
 W = int(x1 - x0 + 1)
 H = int(y1 - y0 + 1)
 
+t0 = time.time()
 mdl = np.zeros((H,W), dtype=np.uint8)
 for m in range(ri.nmontages(r)):
     renderq5(mdl, r, m, s, x0, y0)
+t1 = time.time()
+print(t1-t0)

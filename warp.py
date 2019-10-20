@@ -39,11 +39,54 @@ def warpPerspective(img, mdl2img):
     mdl = cv2.warpPerspective(img, xform, (W,H), flags=cv2.WARP_INVERSE_MAP)
     return (mdl, x0, y0)
 
+def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
+    '''QUADTOIMAGEBOX - Find rectangle in image needed to cover model quad
+    x0,y0,x1,y1 = QUADTOIMAGEBOX(xmodel, ymodel, mdl2img) finds the (integer)
+    edges of a bounding rectangle that fully covers the quadrilateral 
+    specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.'''
+    mdlcorners = np.reshape(np.stack((xmdlbox, ymdlbox), 1), (1, 4, 2))
+    imgcorners = cv2.perspectiveTransform(mdlcorners.astype(np.float32), mdl2img)
+    print('quadtoimagebox. mdlcorners', mdlcorners)
+    print('imgcorners', imgcorners)
+    x0 = int(np.min(imgcorners[:,:,0])-1)
+    x1 = int(np.max(imgcorners[:,:,0])+1+1)
+    y0 = int(np.min(imgcorners[:,:,1])-1)
+    y1 = int(np.max(imgcorners[:,:,1])+1+1)
+    if x0<0:
+        x0 = 0
+    if y0<0:
+        y0 = 0
+    if y1>=shp[0]:
+        y1 = shp[0]
+    if x1>=shp[1]:
+        x1 = shp[1]
+    print('xyxy', (x0, y0, x1, y1))
+    return (x0, y0, x1, y1)
+
+def roundedquad(xx, yy):
+    # xx,yy must be presented in order tl, tr, bl, br
+    # results are presented in order tl, tr, br, bl
+    return (np.array([int(xx[0]), int(xx[1]+1), int(xx[3]+1), int(xx[2])]),
+            np.array([int(yy[0]), int(yy[1]), int(yy[3]+1), int(yy[2])+1]))
+
 def createClipMask(xmodel, ymodel, x0,y0, w,h):
+    # Box must be tl, tr, bl, br
+    xxx,yyy = roundedquad(xmodel, ymodel)
     msk = np.zeros((h,w), dtype=np.uint8)
-    pts = np.stack((xmodel - x0, ymodel - y0), 1)
+    pts = np.stack((xxx - x0, yyy - y0), 1)
     cv2.fillPoly(msk, np.array([pts]), color=255)
     return msk
+
+def warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img):
+    (x0b,y0b,x1b,y1b) = quadToImageBox(xmdlbox, ymdlbox, mdl2img, img.shape)
+    subimg = img[y0b:y1b,x0b:x1b] # This works by reference
+    translate = np.array([[1,0,-x0b], [0,1,-y0b], [0,0,1]])
+    xform = np.matmul(translate, mdl2img)
+    print(subimg.shape, xform)
+    mdlimg, mx0, my0 = warpPerspective(subimg, xform)
+    h, w = mdlimg.shape
+    msk = createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
+    return mdlimg, msk, mx0, my0
 
 def copyWithMask(mdl, img, msk, x0, y0):
     if mdl.dtype != np.uint8:
@@ -51,24 +94,45 @@ def copyWithMask(mdl, img, msk, x0, y0):
     if img.dtype != np.uint8:
         img = img.astype(np.uint8)
     h,w = img.shape
-    outxx = slice(x0, x0+w)
-    outyy = slice(y0, y0+h)
-    print(mdl.shape, img.shape, msk.shape)
-    print(outxx, outyy)
-    np.bitwise_or(np.bitwise_and(img, msk[outyy,outxx]),
-                  np.bitwise_and(mdl[outyy,outxx],
-                                 np.bitwise_not(msk[outyy,outxx])),
-                  mdl[outyy,outxx])
+    H,W = mdl.shape
+    if x0+w > W or y0+h > H:
+        # doesn't quite fit
+        if x0+w>W:
+            w = W - x0
+        if y0+h>H:
+            h = H - y0
+        inx = slice(0, w)
+        iny = slice(0, h)
+        outxx = slice(x0, x0+w)
+        outyy = slice(y0, y0+h)
+        ms = msk[iny,inx]
+        np.bitwise_or(np.bitwise_and(img[iny,inx], ms),
+                      np.bitwise_and(mdl[outyy,outxx],
+                                     np.bitwise_not(ms)),
+                      mdl[outyy,outxx])
+    else:
+        outxx = slice(x0, x0+w)
+        outyy = slice(y0, y0+h)
+        print(mdl.shape, img.shape, msk.shape)
+        print(outxx, outyy)
+        np.bitwise_or(np.bitwise_and(img, msk),
+                      np.bitwise_and(mdl[outyy,outxx],
+                                     np.bitwise_not(msk)),
+                      mdl[outyy,outxx])
 
 if __name__=='__main__':
     import swiftir
     import pyqplot as qp
     ifn = 'test-top-10.jpg'
     img = swiftir.loadImage(ifn)
+    # Following points define the perspective transform
     xmodel = np.array([380, 390, 680, 650])
     ymodel = np.array([1150, 1380, 1390, 1140])
     ximage = np.array([140, 160, 380, 330])
     yimage = np.array([130, 320, 380, 130])
+    # Following points define the area to copy
+    xmdlbox = np.array([350, 360, 700, 700])
+    ymdlbox = np.array([1100, 1400, 1400, 1100])
 
     qp.figure('/tmp/s1');
     Y,X = img.shape
@@ -87,6 +151,9 @@ if __name__=='__main__':
     qp.pen('r', 1)
     qp.marker('+', 4)
     qp.mark(xmodel - x0, ymodel - y0)
+    qp.marker('x', 4)
+    qp.mark(xmdlbox - x0, ymdlbox - y0)
+    
     
     qp.figure('/tmp/s3')
     msk = createClipMask(xmodel, ymodel, x0,y0, X,Y)
@@ -97,3 +164,18 @@ if __name__=='__main__':
     qp.figure('/tmp/s4')
     copyWithMask(dst, mdl, msk, 0, 0)
     qp.imsc(dst, xx=np.arange(X), yy=np.arange(Y))
+
+    qp.figure('/tmp/s5')
+    mdl, msk, x0, y0 = warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img)
+    Y,X = mdl.shape
+    qp.imsc(mdl, xx=np.arange(X), yy=np.arange(Y))
+    qp.figure('/tmp/s6')
+    mdl, msk, x0, y0 = warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img)
+    qp.imsc(msk, xx=np.arange(X), yy=np.arange(Y))
+
+    ds2 = np.zeros((1500,1500), dtype=np.uint8) + 128
+    Y,X = ds2.shape
+    qp.figure('/tmp/s7')
+    copyWithMask(ds2, mdl, msk, x0, y0)
+    qp.imsc(ds2, xx=np.arange(X), yy=np.arange(Y))
+    
