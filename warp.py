@@ -21,7 +21,8 @@ def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     transform MDL2IMG. It returns the resulting image (MDL) as well as
     the coordinates (X0, Y0) where the top-left corner of that image
     should live in model space. (X0, Y0) are guaranteed to be integers.
-    Pixels outside of the defined region are set to black (0).'''
+    Pixels outside of the defined region are set to black (0).
+    Returns a None image on failure to warp the perspective'''
     Y,X = img.shape
     imgcorners = np.array([[[0,0], [X,0], [0,Y], [X,Y]]], dtype='float32')
     img2mdl = getPerspective(ximage, yimage, xmodel, ymodel)
@@ -35,7 +36,13 @@ def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     W = int(np.ceil(x1 - x0))
     H = int(np.ceil(y1 - y0))
     shfmdl2img = getPerspective(xmodel-x0, ymodel-y0, ximage, yimage)
-    mdl = cv2.warpPerspective(img, shfmdl2img, (W,H), flags=cv2.WARP_INVERSE_MAP)
+    try:
+        mdl = cv2.warpPerspective(img, shfmdl2img, (W,H),
+                                  flags=cv2.WARP_INVERSE_MAP)
+    except:
+        print(x0, y0, x1, y1, W, H)
+        print(shfmdl2img)
+        return (None, x0, y0)
     return (mdl, x0, y0)
 
 def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
@@ -86,6 +93,15 @@ def warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
     subimg = img[y0b:y1b,x0b:x1b] # This works by reference
     mdlimg, mx0, my0 = warpPerspective(subimg,
                                        xmodel, ymodel, ximage-x0b, yimage-y0b)
+    if mdlimg is None:
+        print('failed to warp')
+        print('xmodel', xmodel)
+        print('ymodel', ymodel)
+        print('xmdlbox', xmdlbox)
+        print('ymdlbox', ymdlbox)
+        print('ximage', ximage)
+        print('yimage', yimage)
+        raise Exception('Failed to warp')
     h, w = mdlimg.shape
     msk = createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
     return mdlimg, msk, mx0, my0

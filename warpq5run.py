@@ -122,8 +122,13 @@ def renderq5quad(mdl, img, x, y, dx, dy, xc, yc, x0, y0, xm, ym, rms):
     yimage = y - dy
     xmdlbox = xc + xm
     ymdlbox = yc + ym
-    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
-                                                 xmodel, ymodel, ximage, yimage)
+    try:
+        ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
+                                                     xmodel, ymodel,
+                                                     ximage, yimage)
+    except:
+        print('Failed to warp', rms)
+        raise
     try:
         warp.copyWithMask(mdl, ovr, msk, xl-x0, yt-y0)
     except:
@@ -161,7 +166,7 @@ def warpq5run(r, ss=None, usedb=False):
     if usedb:
         for row in db.sel(f'select s from warpq5rundone where r={r}'):
             ssdone.add(int(row[0]))
-    print(f'Done R{r}:', ssdone)
+
     try:
         os.mkdir(f'{root}/R{r}')
     except:
@@ -169,7 +174,7 @@ def warpq5run(r, ss=None, usedb=False):
 
     for s in ss:
         if s in ssdone:
-            print(f'Skipping R{r} S{s}')
+            pass
         else:
             print(f'Working on R{r} S{s}')
             (xx, yy, dxx, dyy, m_, nx_, ny_) = measuringpoints(r, s)
