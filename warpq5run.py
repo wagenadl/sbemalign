@@ -120,10 +120,10 @@ def renderq5quad(mdl, img, x, y, dx, dy, xc, yc, x0, y0, xm, ym, rms):
     ymodel = y + ym
     ximage = x - dx
     yimage = y - dy
-    mdl2img = warp.getPerspective(xmodel, ymodel, ximage, yimage)
     xmdlbox = xc + xm
     ymdlbox = yc + ym
-    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img)
+    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
+                                                 xmodel, ymodel, ximage, yimage)
     try:
         warp.copyWithMask(mdl, ovr, msk, xl-x0, yt-y0)
     except:
