@@ -46,8 +46,6 @@ def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
     specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.'''
     mdlcorners = np.reshape(np.stack((xmdlbox, ymdlbox), 1), (1, 4, 2))
     imgcorners = cv2.perspectiveTransform(mdlcorners.astype(np.float32), mdl2img)
-    print('quadtoimagebox. mdlcorners', mdlcorners)
-    print('imgcorners', imgcorners)
     x0 = int(np.min(imgcorners[:,:,0])-1)
     x1 = int(np.max(imgcorners[:,:,0])+1+1)
     y0 = int(np.min(imgcorners[:,:,1])-1)
@@ -60,7 +58,6 @@ def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
         y1 = shp[0]
     if x1>=shp[1]:
         x1 = shp[1]
-    print('xyxy', (x0, y0, x1, y1))
     return (x0, y0, x1, y1)
 
 def roundedquad(xx, yy):
@@ -82,7 +79,6 @@ def warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img):
     subimg = img[y0b:y1b,x0b:x1b] # This works by reference
     translate = np.array([[1,0,-x0b], [0,1,-y0b], [0,0,1]])
     xform = np.matmul(translate, mdl2img)
-    print(subimg.shape, xform)
     mdlimg, mx0, my0 = warpPerspective(subimg, xform)
     h, w = mdlimg.shape
     msk = createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
@@ -113,8 +109,6 @@ def copyWithMask(mdl, img, msk, x0, y0):
     else:
         outxx = slice(x0, x0+w)
         outyy = slice(y0, y0+h)
-        print(mdl.shape, img.shape, msk.shape)
-        print(outxx, outyy)
         np.bitwise_or(np.bitwise_and(img, msk),
                       np.bitwise_and(mdl[outyy,outxx],
                                      np.bitwise_not(msk)),
