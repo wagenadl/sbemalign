@@ -14,7 +14,7 @@ def getPerspective(xmodel, ymodel, ximage, yimage):
     mdl2img = cv2.getPerspectiveTransform(xymodel, xyimage)
     return mdl2img
 
-def warpPerspective(img, mdl2img):
+def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     '''WARPPERSPECTIVE - Copy an image to model space
     mdl, x0, y0 = WARPPERSPECTIVE(img, mdl2img) fills a portion of model
     space that fully covers the source IMG based on the perspective
@@ -24,7 +24,7 @@ def warpPerspective(img, mdl2img):
     Pixels outside of the defined region are set to black (0).'''
     Y,X = img.shape
     imgcorners = np.array([[[0,0], [X,0], [0,Y], [X,Y]]], dtype='float32')
-    img2mdl= np.linalg.inv(mdl2img)
+    img2mdl = getPerspective(ximage, yimage, xmodel, ymodel)
     mdlcorners = cv2.perspectiveTransform(imgcorners, img2mdl)
     xmdlcorners = mdlcorners[0,:,0]
     ymdlcorners = mdlcorners[0,:,1]
@@ -34,9 +34,8 @@ def warpPerspective(img, mdl2img):
     y1 = np.max(ymdlcorners)
     W = int(np.ceil(x1 - x0))
     H = int(np.ceil(y1 - y0))
-    translate = np.array([[1,0,x0], [0,1,y0], [0,0,1]])
-    xform = np.matmul(mdl2img, translate)
-    mdl = cv2.warpPerspective(img, xform, (W,H), flags=cv2.WARP_INVERSE_MAP)
+    shfmdl2img = getPerspective(xmodel-x0, ymodel-y0, ximage, yimage)
+    mdl = cv2.warpPerspective(img, shfmdl2img, (W,H), flags=cv2.WARP_INVERSE_MAP)
     return (mdl, x0, y0)
 
 def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
@@ -46,6 +45,8 @@ def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
     specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.'''
     mdlcorners = np.reshape(np.stack((xmdlbox, ymdlbox), 1), (1, 4, 2))
     imgcorners = cv2.perspectiveTransform(mdlcorners.astype(np.float32), mdl2img)
+    print('quad', mdlcorners)
+    print('-->>', imgcorners)
     x0 = int(np.min(imgcorners[:,:,0])-1)
     x1 = int(np.max(imgcorners[:,:,0])+1+1)
     y0 = int(np.min(imgcorners[:,:,1])-1)
@@ -74,12 +75,17 @@ def createClipMask(xmodel, ymodel, x0,y0, w,h):
     cv2.fillPoly(msk, np.array([pts]), color=255)
     return msk
 
-def warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img):
+def warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
+                         xmodel, ymodel, ximage, yimage):
+    print('warpboxed box', xmdlbox, ymdlbox)
+    print('warpboxed mod', xmodel, ymodel)
+    print('warpboxed img', ximage, yimage)
+    mdl2img = getPerspective(xmodel, ymodel, ximage, yimage)
+    print(mdl2img)
     (x0b,y0b,x1b,y1b) = quadToImageBox(xmdlbox, ymdlbox, mdl2img, img.shape)
     subimg = img[y0b:y1b,x0b:x1b] # This works by reference
-    translate = np.array([[1,0,-x0b], [0,1,-y0b], [0,0,1]])
-    xform = np.matmul(translate, mdl2img)
-    mdlimg, mx0, my0 = warpPerspective(subimg, xform)
+    mdlimg, mx0, my0 = warpPerspective(subimg,
+                                       xmodel, ymodel, ximage-x0b, yimage-y0b)
     h, w = mdlimg.shape
     msk = createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
     return mdlimg, msk, mx0, my0

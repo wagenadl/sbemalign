@@ -97,13 +97,13 @@ def cornerpoints(x, y, xm, ym, r):
             m3 = (ir+1)*NC + ic
             m4 = (ir+1)*NC + (ic+1)
             meanx = (x[m1,-1,-1]+xm[m1] + x[m2,-1,0]+xm[m2]
-                     + x[m3,0,-1]+xm[m3] + x[m4,-1,-1]+xm[m4]) / 4
+                     + x[m3,0,-1]+xm[m3] + x[m4,0,0]+xm[m4]) / 4
             xc[m1,-1,-1] = meanx-xm[m1]
             xc[m2,-1,0] = meanx - xm[m2]
             xc[m3,0,-1] = meanx - xm[m3]
             xc[m4,-1,-1] = meanx - xm[m4]
             meany = (y[m1,-1,-1]+ym[m1] + y[m2,-1,0]+ym[m2]
-                     + y[m3,0,-1]+ym[m3] + y[m4,-1,-1]+ym[m4]) / 4
+                     + y[m3,0,-1]+ym[m3] + y[m4,0,0]+ym[m4]) / 4
             yc[m1,-1,-1] = meany-ym[m1]
             yc[m2,-1,0] = meany - ym[m2]
             yc[m3,0,-1] = meany - ym[m3]

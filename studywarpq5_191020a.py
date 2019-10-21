@@ -9,14 +9,14 @@ import rawimage
 import warp
 import pyqplot as qp
 import numpy as np
-import factory
+
+r = 9
+s = 0
 
 db = aligndb.DB()
 ri = db.runinfo()
 X = Y = 684*5 # Full size of a q5 image
 NY = NX = 7 # Number of measurement points
-
-root = '/lsi2/dw/170428/runalignq5'
 
 def runextent(r):
     res = db.sel(f'''select
@@ -114,27 +114,60 @@ def roughpos(r):
     (xm, ym) = db.vsel(f'select x, y from roughq5pos where r={r}')
     return (xm, ym)
     
-def renderq5quad(mdl, img, x, y, dx, dy, xc, yc, x0, y0, xm, ym, rms):
+def renderq5quad(mdl, img, x, y, dx, dy, xc, yc, x0, y0, xm, ym):
+    print(f'renderq5quad r{r} m{m} s{s}')
     # Got positions in order tl, tr, bl, br
     xmodel = x + xm
     ymodel = y + ym
     ximage = x - dx
     yimage = y - dy
-    mdl2img = warp.getPerspective(xmodel, ymodel, ximage, yimage)
+    print(xmodel)
+    print(ymodel)
+    print(ximage)
+    print(yimage)
+    print(f'x0{x0} y0{y0} xm{xm} ym{ym}')
+    print('x = ', x)
+    print('y = ', y)
+    print('dx = ', dx)
+    print('dy = ', dy)
     xmdlbox = xc + xm
     ymdlbox = yc + ym
-    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox, mdl2img)
-    try:
-        warp.copyWithMask(mdl, ovr, msk, xl-x0, yt-y0)
-    except:
-        print('Failed to copy', rms)
-        raise
+    ovr, msk, xl, yt = warp.warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
+                                                 xmodel, ymodel, ximage, yimage)
+    print('ovr.shape', ovr.shape)
+    qp.subplot(1,2,1)
+    qp.imsc(ovr)
+    qp.subplot(1,2,2)
+    qp.imsc(msk)
+    print('msk.shape', msk.shape)
+    print('mdl.shape', mdl.shape)
+    warp.copyWithMask(mdl, ovr, msk, xl-x0, yt-y0)
 
 def renderq5(mdl, r, m, s, x0, y0, xx, yy, dx, dy, xc, yc, xm, ym):
-    print(f'getting images R{r} M{m} S{s}')
+    print(f'renderq5 R{r} M{m} S{s}')
     img = fullq5img(r, m, s)
-    for nx in range(NX-1):
-        for ny in range(NY-1):
+    print(f'got image R{r} M{m} S{s}')
+    if m==0:
+        nxx = [5]
+        nyy = [5]
+    elif m==1:
+        nxx = [0]
+        nyy = [5]
+    elif m==2:
+        nxx = [5]
+        nyy = [0]
+    elif m==3:
+        nxx = [0]
+        nyy = [0]
+    elif m==4:
+        nxx = [2]
+        nyy = [2]
+    else:
+        nxx = []
+        nyy = []
+    for nx in nxx:
+        for ny in nyy:
+            qp.figure(f'/tmp/s{nx}{ny}', 6, 3)
             renderq5quad(mdl, img,
                          xx[ny:ny+2,nx:nx+2].flatten(),
                          yy[ny:ny+2,nx:nx+2].flatten(),
@@ -143,69 +176,25 @@ def renderq5(mdl, r, m, s, x0, y0, xx, yy, dx, dy, xc, yc, xm, ym):
                          xc[ny:ny+2,nx:nx+2].flatten(),
                          yc[ny:ny+2,nx:nx+2].flatten(),
                          x0, y0,
-                         xm, ym,
-                         (r,m,s,nx,ny))
+                         xm, ym)
 
-def warpq5run(r, ss=None, usedb=False):
-    if ss is None:
-        ss = range(0, ri.nslices(r))
+t0 = time.time()
+print(f'rendering R{r} S{s}')
+x0, y0, x1, y1 = runextent(r)
+(xx, yy, dxx, dyy, m_, nx_, ny_) = measuringpoints(r, s)
+(xxm, yym) = roughpos(r)
+(xxc, yyc) = cornerpoints(xx, yy, xxm, yym, r)
 
-    print(f'working on R{r}')
-    x0, y0, x1, y1 = runextent(r)
-    (xxm, yym) = roughpos(r)
+W = int(x1 - x0 + 1)
+H = int(y1 - y0 + 1)
+print(f'got position info R{r} S{s}')
 
-    W = int(x1 - x0 + 1)
-    H = int(y1 - y0 + 1)
-
-    ssdone = set()
-    if usedb:
-        for row in db.sel(f'select s from warpq5rundone where r={r}'):
-            ssdone.add(int(row[0]))
-    print(f'Done R{r}:', ssdone)
-    try:
-        os.mkdir(f'{root}/R{r}')
-    except:
-        pass
-
-    for s in ss:
-        if s in ssdone:
-            print(f'Skipping R{r} S{s}')
-        else:
-            print(f'Working on R{r} S{s}')
-            (xx, yy, dxx, dyy, m_, nx_, ny_) = measuringpoints(r, s)
-            (xxc, yyc) = cornerpoints(xx, yy, xxm, yym, r)
-            print(f'got position info R{r} S{s}')
-
-            mdl = np.zeros((H,W), dtype=np.uint8)
-            for m in range(ri.nmontages(r)):
-                renderq5(mdl, r, m, s, x0, y0,
-                     xx[m,:,:], yy[m,:,:],
-                     dxx[m,:,:], dyy[m,:,:],
-                     xxc[m,:,:], yyc[m,:,:],
-                     xxm[m], yym[m])
-            cv2.imwrite(f'{root}/R{r}/S{s}.jpg', mdl)
-            if usedb:
-                db.exe(f'insert into warpq5rundone (r,s) values ({r},{s})')
-
-if __name__ == '__main__':
-
-    def droptable():
-        db.exe('''drop table warpq5rundone''')
-
-    def maketable():
-        db.exe('''create table if not exists warpq5rundone (
-        r integer,
-        s integer )''')
-    
-    import factory
-    import cv2
-
-    nthreads = 8
-    maketable()
-    fac = factory.Factory(nthreads)
-    for r0 in range(ri.nruns()):
-        r = r0+1
-        cnt = db.sel(f'select count(*) from warpq5rundone where r={r}')[0][0]
-        if cnt<ri.nslices(r):
-            fac.request(warpq5run, r, None, True)
-                        
+mdl = np.zeros((H,W), dtype=np.uint8)
+for m in range(ri.nmontages(r)):
+    renderq5(mdl, r, m, s, x0, y0,
+             xx[m,:,:], yy[m,:,:],
+             dxx[m,:,:], dyy[m,:,:],
+             xxc[m,:,:], yyc[m,:,:],
+             xxm[m], yym[m])
+t1 = time.time()
+print(t1-t0)
