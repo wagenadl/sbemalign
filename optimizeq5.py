@@ -122,6 +122,9 @@ fac = factory.Factory(nthreads)
 for r0 in range(ri.nruns()):
     r = r0 + 1
     cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
-    if cnt <= 7*7*ri.nmontages(r)*ri.nslices(r):
+    if cnt < 7*7*ri.nmontages(r)*ri.nslices(r):
         fac.request(optimizerun, r)
-        
+
+print('waiting for completion')
+fac.shutdown()
+ 

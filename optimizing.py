@@ -294,7 +294,7 @@ class Index:
         
     def makeintraindex(self, ad, p, montthr):
         intra = []
-        if ad.S>1:
+        if True: #ad.S>1:
             for m in range(ad.M):
                 S,NY,NX = ad.intra[m].shape()
                 idx = np.zeros((S,NY,NX), dtype=int) - 1
@@ -518,7 +518,7 @@ class UDelta:
                         dist2 /= np.min(dist2)
                         wei = np.exp(-dist2)
                         use = np.logical_not(np.isnan(d0))
-                        d1[ny,nx] = np.sum(wei[use]*d0[use]) / np.sum(wei[use])
+                        d1[ny,nx] = np.sum(wei[use]*d0[use]) / (np.sum(wei[use])+1e-99)
             dd[s,:,:] = d1
         return dd
     

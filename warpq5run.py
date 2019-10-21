@@ -191,7 +191,9 @@ if __name__ == '__main__':
         s integer )''')
     
     import factory
-    nthreads = 1
+    import cv2
+
+    nthreads = 12
     maketable()
     fac = factory.Factory(nthreads)
     for r0 in range(ri.nruns()):
