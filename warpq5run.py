@@ -101,13 +101,13 @@ def cornerpoints(x, y, xm, ym, r):
             xc[m1,-1,-1] = meanx-xm[m1]
             xc[m2,-1,0] = meanx - xm[m2]
             xc[m3,0,-1] = meanx - xm[m3]
-            xc[m4,-1,-1] = meanx - xm[m4]
+            xc[m4,0,0] = meanx - xm[m4]
             meany = (y[m1,-1,-1]+ym[m1] + y[m2,-1,0]+ym[m2]
                      + y[m3,0,-1]+ym[m3] + y[m4,0,0]+ym[m4]) / 4
             yc[m1,-1,-1] = meany-ym[m1]
             yc[m2,-1,0] = meany - ym[m2]
             yc[m3,0,-1] = meany - ym[m3]
-            yc[m4,-1,-1] = meany - ym[m4]
+            yc[m4,0,0] = meany - ym[m4]
     return (xc, yc)
 
 def roughpos(r):
