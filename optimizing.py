@@ -286,7 +286,7 @@ class Index:
                     for nx in range(NX):
                         for s in range(S):
                             if ad.edge[m][m_].snr[s,ny,nx] > edgethr \
-                               or ad.cross[(m,m_)].snr[s,ny,nx] > crossthr:
+                               and ad.cross[(m,m_)].snr[s,ny,nx] > crossthr:
                                 idx[s,ny,nx] = p
                                 p += 1
                 idxt.append(idx)
@@ -501,8 +501,10 @@ class UDelta:
                 if np.all(isn):
                     if iy==0:
                         yy[iy,:] = 0
+                    elif iy==NY-1:
+                        yy[iy,:] = MAXX
                     else:
-                        yy[iy,:] = NX * X
+                        yy[iy,:] = .5*Y + (iy-1)
                 else:
                     yy[iy, isn] = np.mean(yy[iy, np.logical_not(isn)])
             self.yy[s,:,:] = yy
