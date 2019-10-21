@@ -157,6 +157,11 @@ def warpq5run(r, ss=None, usedb=False):
 
     print(f'working on R{r}')
     x0, y0, x1, y1 = runextent(r)
+    if usedb:
+        db.exe(f'''insert into runextentq5 (r, x0, y0, x1, y1)
+        values {r}, {x0}, {y0}, {x1}, {y1}
+        on conflict do update''')
+        
     (xxm, yym) = roughpos(r)
 
     W = int(x1 - x0 + 1)
@@ -192,16 +197,130 @@ def warpq5run(r, ss=None, usedb=False):
             if usedb:
                 db.exe(f'insert into warpq5rundone (r,s) values ({r},{s})')
 
+class MontPos:
+    def __init__(self, r):
+        (self.x, self.y) = roughpos(r)
+    def runToMontage(self, m, xx, yy):
+        return (xx - self.x[m], yy - self.y[m])
+    def montageToRun(self, m, xx, yy):
+        return (xx + self.x[m], yy + self.y[m])
+
+montpos = {}
+        
+class Transformer:
+    def __init__(self, r, s):
+        if r not in montpos:
+            montpos[r] = MontPos(r)
+        (self.x, self.y, self.dx, self.dy, m_, nx_, ny_) = measuringpoints(r, s)
+        self.M, self.NY, self.NX = self.x.shape
+        (self.xc, self.yc) = cornerpoints(self.x, self.y,
+                                          montpos[r].x, montpos[r].y,
+                                          r)
+        self.mont2imgs = {}
+        self.imgs2mont = {}
+
+    def mont2image(mont2imgs, m, nx, ny):
+        imgid = (m, nx, ny)
+        if imgid not in self.mont2imgs:
+            x = self.x[m,ny:ny+2,nx:nx+2].flatten()
+            y = self.y[m,ny:ny+2,nx:nx+2].flatten()
+            dx = self.dx[m,ny:ny+2,nx:nx+2].flatten()
+            dy = self.dy[m,ny:ny+2,nx:nx+2].flatten()
+            mont2imgs[imgid] = warp.getPerspective(x, y, x-dx, y-dx)
+        return self.mont2imgs[imgid]
+
+    def image2mont(mont2imgs, m, nx, ny):
+        imgid = (m, nx, ny)
+        if imgid not in self.img2monts:
+            x = self.x[m,ny:ny+2,nx:nx+2].flatten()
+            y = self.y[m,ny:ny+2,nx:nx+2].flatten()
+            dx = self.dx[m,ny:ny+2,nx:nx+2].flatten()
+            dy = self.dy[m,ny:ny+2,nx:nx+2].flatten()
+            imgs2mont[imgid] = warp.getPerspective(x-dx, y-dy, x, y)
+        return self.imgs2mont[imgid]
+    
+    def findInRun(self, xrun, yrun):
+        # Returns m, nx, ny triplet, or None
+        for m in range(self.M):
+            xm = montpos[r].x[m]
+            ym = montpos[r].y[m]
+            xmont = xrun - xm
+            ymont = yrun - ym
+            res = self.findQuadInMontage(m, xmont, ymont)
+            if res is not None:
+                return (m, res[0], res[1])
+        return None
+
+    def containedInQuad(self, xmont, ymont, m, nx, ny):
+        def _outside(xtest, ytest, xfrom, yfrom, xto, yto):
+            return xtest*(yto-yfrom) - ytest*(xto-xfrom) > 0
+        xc = self.xc[m,ny:ny+2,nx:nx+2]
+        yc = self.yc[m,ny:ny+2,nx:nx+2]
+        if _outside(xmont, ymont, xc[0,0], yc[0,0], xc[0,1], yc[0,1]):
+            return False
+        elif _outside(xmont, ymont, xc[0,1], yc[0,1], xc[1,1], yc[1,1]):
+            return False
+        elif _outside(xmont, ymont, xc[1,1], yc[1,1], xc[1,0], yc[1,0]):
+            return False
+        elif _outside(xmont, ymont, xc[1,0], yc[1,0], xc[0,0], yc[0,0]):
+            return False
+        else:
+            return True
+        
+    def findInMontage(self, m, xmont, ymont):
+        for ny in range(self.NY-1):
+            for nx in range(self.NX-1):
+                if self.containedInQuad(xmont, ymont, m, nx, ny):
+                    return (nx, ny)
+        return None
+    
+    def runToQuad(self, xrun, yrun, m, nx, ny):
+        xmont = xrun - self.xm[m]
+        ymont = yrun - self.ym[m]
+        mont2img = self.mont2image(m, nx, ny)
+        (ximg,yimg) = warp.applyPerspective(mont2img, xmont, ymont)
+        return (ximg, yimg)
+    
+    def quadToMont(self, ximg, yimg, m, nx, ny):
+        img2mont = self.image2mont(m, nx, ny)
+        (xmont, ymont) = warp.applyPerspective(img2mont, ximg, yimg)
+        return (xmont, ymont)
+
+    def quadToRun(self, ximg, yimg, m, nx, ny):
+        (xmont, ymont) = self.quadToMont(ximg, yimg, m, nx, ny)
+        xrun = xmont + self.xm[m]
+        yrun = ymont + self.ym[m]
+        return (xrun, yrun)
+
+    def rawToRun(self, xraw, yraw, m):
+        # Map raw coordinates within the q5 tile to run coordinates
+        # This is fairly slow, because we first have to find the relevant quad.
+        # Result may be None if pixel is not represented.
+        for ny in range(self.NY-1):
+            for nx in range(self.NX-1):
+                xmont, ymont = self.quadToMont(xraw, yaw, m, nx, ny)
+                if self.containedInQuad(xmont, ymont, m, nx, ny):
+                    return montpos[self.r].montageToRun(xmont, ymont)
+        return None
+
 if __name__ == '__main__':
 
     def droptable():
         db.exe('''drop table warpq5rundone''')
+        db.exe('''drop table runextentq5''')
 
     def maketable():
         db.exe('''create table if not exists warpq5rundone (
         r integer,
         s integer )''')
-    
+
+        db.exe('''create table if not exists runextentq5 (
+        r integer unique,
+        x0 integer,
+        y0 integer,
+        x1 integer,
+        y1 integer )''')
+        
     import factory
     import cv2
 

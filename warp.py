@@ -14,6 +14,11 @@ def getPerspective(xmodel, ymodel, ximage, yimage):
     mdl2img = cv2.getPerspectiveTransform(xymodel, xyimage)
     return mdl2img
 
+def applyPerspective(mdl2img, xmodel, ymodel):
+    xymodel = np.array([np.stack((xmodel,ymodel), 1)])
+    xyimage = cv2.perspectiveTransform(xymodel, img2mdl)
+    return (xyimage[0,:,0], xyimage[0,:,1])
+
 def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     '''WARPPERSPECTIVE - Copy an image to model space
     mdl, x0, y0 = WARPPERSPECTIVE(img, mdl2img) fills a portion of model

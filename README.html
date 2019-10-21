@@ -1,0 +1,105 @@
+<h1 id="the-realignment-process">The realignment process</h1>
+<h2 id="terminology">Terminology</h2>
+<dl>
+<dt>Tile</dt>
+<dd>a source image at original or reduced scale
+</dd>
+<dt>Source tile</dt>
+<dd>a source image at original scale
+</dd>
+<dt>Scaled tile</dt>
+<dd>a source image at reduced scale
+</dd>
+<dt>Run</dt>
+<dd>a single run of the microscope
+</dd>
+<dt>Montage</dt>
+<dd>all tiles within a run taken at nominally the same x-y-position
+</dd>
+<dt>Slice</dt>
+<dd>all tiles within a run taken at nominally the same z-position
+</dd>
+<dt>Model space</dt>
+<dd>coordinate space for global reconstruction
+</dd>
+<dt>Run space</dt>
+<dd>coordinate space for a run; defined relative to the model space by way of a translation
+</dd>
+<dt>Montage space</dt>
+<dd>coordinate space for a montage; defined relative to the run space by way of a translation
+</dd>
+<dt>Tile space</dt>
+<dd>coordinate space for a tile; defined relative to the enclosing montage by way of a grid of matching points that define subtiles
+</dd>
+</dl>
+<h2 id="database-tables">Database tables</h2>
+<p>These are organized in order of construction hierarchy, toplevel tables first.</p>
+<h3 id="warpq5rundone">warpq5rundone</h3>
+<p>Simple bookkeeping of which slices have been rendered at Q5 so far.</p>
+<h4 id="members">Members:</h4>
+<dl>
+<dt>r, s</dt>
+<dd>run and slice number
+</dd>
+</dl>
+<h4 id="associated-files">Associated files:</h4>
+<dl>
+<dt>/lsi2/dw/170428/runalignq5/R{r}/S{s}.jpg</dt>
+<dd>Entire slice at 1:5 scale
+</dd>
+</dl>
+<h4 id="constructed-by">Constructed by:</h4>
+<p>warpq5run.py</p>
+<h4 id="dependencies">Dependencies:</h4>
+<ul>
+<li>roughq5pos</li>
+<li>optimizeq5</li>
+</ul>
+<h4 id="see-also">See also:</h4>
+<ul>
+<li>runextentq5</li>
+</ul>
+<h3 id="runextentq5">runextentq5</h3>
+<p>Coordinates in run space that are included in the rendered images at Q5</p>
+<h4 id="members-1">Members:</h4>
+<dl>
+<dt>r</dt>
+<dd>run number
+</dd>
+<dt>x0, y0, x1, y1</dt>
+<dd>coordinates of image in run space<br />
+x0, y0 are inclusive; x1, y1 are exclusive.
+</dd>
+</dl>
+<h4 id="constructed-by-1">Constructed by:</h4>
+<p>warpq5run.py</p>
+<h4 id="dependencies-1">Dependencies:</h4>
+<ul>
+<li>roughq5pos</li>
+<li>optimizeq5</li>
+</ul>
+<h3 id="roughq5pos">roughq5pos</h3>
+<p>Slightly misnamed, this table contained positions of montages within a run</p>
+<h4 id="members-2">Members:</h4>
+<dl>
+<dt>r, m</dt>
+<dd>run and montage numbers
+</dd>
+<dt>x, y</dt>
+<dd>coordinates of given montage
+</dd>
+</dl>
+<h4 id="constructed-by-2">Constructed by:</h4>
+<p>optimizeq5.py</p>
+<h4 id="dependencies-2">Dependencies:</h4>
+<ul>
+<li>slicealignq5</li>
+<li>montagealignq5relhp</li>
+<li>montagealignattouchq5relhp</li>
+</ul>
+<h4 id="see-also-1">See also:</h4>
+<ul>
+<li>optimizeq5</li>
+</ul>
+<h4 id="notes">Notes</h4>
+<p>By construction, the average of all x-values for montages within a run is zero. Same for y-values.</p>
