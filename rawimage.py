@@ -22,6 +22,17 @@ def rawtile(r, m, s):
         pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
     return pat % (root, r, m, r, s)
 
+def rawsubtile(r, m, s, ix, iy):
+    '''RAWSUBTILE - Filename for subtile out of raw image
+    fn = RAWSUBTILE(r, m, s, ix, iy) returns the path of a tiff subtile
+    out of the raw data (at full scale). There are 33x33 subtiles for
+    each tile, numbered 0..32 (inclusive). Each is 512x512 pixels wide.
+    This means that at each of the four edges of a raw image, 102
+    pixels are not incorporated in the subtiles.'''
+    dr = config.oldroot + f'/unaligned/R{r:03d}/M{m:03d}/S{s:04d}'
+    fn = f'X{ix:02d}Y{iy:02d}.tif'
+    return f'{dr}/{fn}'
+
 def scaledtile(r, m, s, q):
     '''SCALEDTILE - Filename for scaled raw image
     fn = SCALEDTILE(r, m, s, q) returns the path of the scaled raw image
@@ -140,6 +151,44 @@ def betaimg(z, a=6):
     url = f'http://leechem.caltech.edu:9090/roi_pix/z{z}/x{x0}/y{y0}/w{w}/h{h}/a{a}.jpg'
     print(x0, y0, w, h, url)
     return loadimage(url)
+
+def q1subimg(r, m, s, ix, iy):
+    return loadimage(rawsubtile(r, m, s, ix, iy))
+
+def q1roi(r, m, s, x, y, w, h):
+    '''Q1ROI - Load an arbitrary rectangular patch from a raw tile
+    img = Q1ROI(r, m, s, x, y, w, h) loads an WxH-sized image patch
+    from the "unaligned" tiles with top-left at (X,Y). Note that this
+    corresponds to (X+102, Y+102) in the 16-bit raw tiffs.'''
+    R = 512
+    x0 = x // R # Leftmost column to read, inclusive
+    x1 = (x+w+R-1) // R # Rightmost column to read, exclusive
+    y0 = y // R
+    y1 = (y+h+R-1) // R
+    dx = x - R*x0
+    dy = y - R*y0
+    img = np.zeros((h,w), dtype=np.uint8)
+    Y0 = 0
+    for iy in range(y0, y1):
+        yidx = slice(0, R)
+        if iy==y0:
+            yidx = slice(dy, R)
+        elif iy==y1-1 and dy>0:
+            yidx = slice(0, dy)
+        X0 = 0
+        for ix in range(x0, x1):
+            xidx = slice(0, R)
+            if ix==x0:
+                xidx = slice(dx, R)
+            elif ix==x1-1 and dx>0:
+                xidx = slice(0, dx)
+            sub = q1subimg(r, m, s, ix, iy)
+            sub = sub[yidx, xidx]
+            H,W = sub.shape
+            img[Y0:Y0+H, X0:X0+W] = sub
+            X0 += W
+        Y0 += H
+    return img
 
 def partialq5img(r, m, s, ix, iy):
     return loadimage(partialq5tile(r, m, s, ix, iy))
