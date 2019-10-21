@@ -10,7 +10,7 @@ import warp
 import pyqplot as qp
 import numpy as np
 
-r = 5
+r = 9
 s = 0
 
 db = aligndb.DB()

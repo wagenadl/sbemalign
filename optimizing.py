@@ -484,8 +484,10 @@ class UDelta:
                 if np.all(isn):
                     if ix==0:
                         xx[:,ix] = 0
-                    else:
+                    elif ix==NX-1:
                         xx[:,ix] = MAXX
+                    else:
+                        xx[:,ix] = .5*X + (ix-1)
                 else:
                     xx[isn, ix] = np.mean(xx[np.logical_not(isn), ix])
             self.xx[s,:,:] = xx

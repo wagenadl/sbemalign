@@ -91,12 +91,20 @@ def copyWithMask(mdl, img, msk, x0, y0):
         img = img.astype(np.uint8)
     h,w = img.shape
     H,W = mdl.shape
-    if x0+w > W or y0+h > H:
+    if x0+w > W or y0+h > H or x0<0 or y0<0:
         # doesn't quite fit
+        if x0<0:
+            w += x0
+            x0 = 0
+        if y0<0:
+            h += y0
+            y0 = 0
         if x0+w>W:
             w = W - x0
         if y0+h>H:
             h = H - y0
+        if w<=0 or h<=0:
+            return
         inx = slice(0, w)
         iny = slice(0, h)
         outxx = slice(x0, x0+w)
