@@ -45,8 +45,8 @@ def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
     specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.'''
     mdlcorners = np.reshape(np.stack((xmdlbox, ymdlbox), 1), (1, 4, 2))
     imgcorners = cv2.perspectiveTransform(mdlcorners.astype(np.float32), mdl2img)
-    print('quad', mdlcorners)
-    print('-->>', imgcorners)
+    #print('quad', mdlcorners)
+    #print('-->>', imgcorners)
     x0 = int(np.min(imgcorners[:,:,0])-1)
     x1 = int(np.max(imgcorners[:,:,0])+1+1)
     y0 = int(np.min(imgcorners[:,:,1])-1)
@@ -77,11 +77,11 @@ def createClipMask(xmodel, ymodel, x0,y0, w,h):
 
 def warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
                          xmodel, ymodel, ximage, yimage):
-    print('warpboxed box', xmdlbox, ymdlbox)
-    print('warpboxed mod', xmodel, ymodel)
-    print('warpboxed img', ximage, yimage)
+    #print('warpboxed box', xmdlbox, ymdlbox)
+    #print('warpboxed mod', xmodel, ymodel)
+    #print('warpboxed img', ximage, yimage)
     mdl2img = getPerspective(xmodel, ymodel, ximage, yimage)
-    print(mdl2img)
+    #print(mdl2img)
     (x0b,y0b,x1b,y1b) = quadToImageBox(xmdlbox, ymdlbox, mdl2img, img.shape)
     subimg = img[y0b:y1b,x0b:x1b] # This works by reference
     mdlimg, mx0, my0 = warpPerspective(subimg,
