@@ -14,6 +14,7 @@ db = aligndb.DB()
 ri = db.runinfo()
 
 X = Y = 684 # This is correct for our Q5 work
+MAXX = X*5  # This is correct for our Q5 work
 
 # Terminology:
 # INTRA refers to alignment within a montage (adjacent s, same m)
@@ -484,7 +485,7 @@ class UDelta:
                     if ix==0:
                         xx[:,ix] = 0
                     else:
-                        xx[:,ix] = NX * X
+                        xx[:,ix] = MAXX
                 else:
                     xx[isn, ix] = np.mean(xx[np.logical_not(isn), ix])
             self.xx[s,:,:] = xx

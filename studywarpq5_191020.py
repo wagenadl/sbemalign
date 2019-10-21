@@ -10,8 +10,8 @@ import warp
 import pyqplot as qp
 import numpy as np
 
-r = 21
-s = 100
+r = 5
+s = 0
 
 db = aligndb.DB()
 ri = db.runinfo()
