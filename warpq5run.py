@@ -158,9 +158,14 @@ def warpq5run(r, ss=None, usedb=False):
     print(f'working on R{r}')
     x0, y0, x1, y1 = runextent(r)
     if usedb:
-        db.exe(f'''insert into runextentq5 (r, x0, y0, x1, y1)
-        values {r}, {x0}, {y0}, {x1}, {y1}
-        on conflict do update''')
+        res = db.sel(f'select x0, y0, x1, y1 from runextentq5 where r={r}')
+        if len(res):
+            (x0a, y0a, x1a, y1a) = res[0]
+            if x0!=x0a or y0!=y0a or x1!=x1a or y1!=y1a:
+                raise Exception(f'Conflicting extents for R{r}')
+        else:
+            db.exe(f'''insert into runextentq5 (r, x0, y0, x1, y1)
+              values ({r}, {x0}, {y0}, {x1}, {y1})''')
         
     (xxm, yym) = roughpos(r)
 
