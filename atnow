@@ -3,6 +3,6 @@
 HERE=`pwd`
 at now <<EOF
 cd $HERE
-python3 $1
+python3 $1 >/tmp/atnow-$$.log 2>&1
 EOF
 

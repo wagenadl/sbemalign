@@ -71,6 +71,9 @@ def loadimage(url):
     #else:
     #    return cv2.imread(url, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 
+def loadlocaltif(fn):
+    return cv2.imread(fn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+
 def ihist(img):
     '''IHIST - Calculate image histogram
     hst = IHIST(img) where IMG is either an 8-bit or a 16-bit image, calculates
@@ -153,13 +156,22 @@ def betaimg(z, a=6):
     return loadimage(url)
 
 def q1subimg(r, m, s, ix, iy):
-    return loadimage(rawsubtile(r, m, s, ix, iy))
+    return loadlocaltif(rawsubtile(r, m, s, ix, iy))
+
+def q1subimg2x2(r, m, s, ix, iy):
+    img = np.zeros((1024, 1024), dtype=np.uint8)
+    img[:512,:512] = q1subimg(r,m,s,ix-1,iy-1)
+    img[:512,512:] = q1subimg(r,m,s,ix,iy-1)
+    img[512:,:512] = q1subimg(r,m,s,ix-1,iy)
+    img[512:,512:] = q1subimg(r,m,s,ix,iy)
+    return img
 
 def q1roi(r, m, s, x, y, w, h):
     '''Q1ROI - Load an arbitrary rectangular patch from a raw tile
     img = Q1ROI(r, m, s, x, y, w, h) loads an WxH-sized image patch
     from the "unaligned" tiles with top-left at (X,Y). Note that this
     corresponds to (X+102, Y+102) in the 16-bit raw tiffs.'''
+    print('q1roi', r, m, s, x, y, w, h)
     R = 512
     x0 = x // R # Leftmost column to read, inclusive
     x1 = (x+w+R-1) // R # Rightmost column to read, exclusive
@@ -183,11 +195,19 @@ def q1roi(r, m, s, x, y, w, h):
             elif ix==x1-1 and dx>0:
                 xidx = slice(0, dx)
             sub = q1subimg(r, m, s, ix, iy)
+            sh,sw = sub.shape
+            if sh!=R or sw!=R:
+                 raise Exception(f'Wrong size subimg R{r} M{m} S{s} {ix},{iy}')
             sub = sub[yidx, xidx]
             H,W = sub.shape
+            if X0+W > w:
+                 raise Exception(f'Bug X0+W>w at R{r} M{m} S{s} {ix},{iy}')
+            if Y0+H > h:
+                 raise Exception(f'Bug Y0+H>h at R{r} M{m} S{s} {ix},{iy}')
             img[Y0:Y0+H, X0:X0+W] = sub
             X0 += W
         Y0 += H
+    print('q1roi done', r, m, s, x, y, w, h)
     return img
 
 def partialq5img(r, m, s, ix, iy):

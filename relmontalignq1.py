@@ -65,16 +65,6 @@ ri = db.runinfo()
 
 def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
     print(f'Working on r{r} m{m} s{s} {ix},{iy}')
-    if neighborhoodimg is None:
-        db.exe(f'''insert into relmontalignq1 
-        (r,m,s,ix,iy,
-        dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb)
-        values
-        ({r},{m},{s},{ix},{iy},
-        0,0,0,0,1000,
-        0,0,0,0,1000)''')
-        return
-    
     Y,X = tileimg.shape
     SIZ = (1024, 1024)
     win1 = swiftir.extractStraightWindow(tileimg, (X/2,Y/2), SIZ)
@@ -102,13 +92,14 @@ def alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg):
         
 def alignmanysubtiles(r, m, ix, iy):
     cnt = db.sel(f'''select count(1) from relmontalignq1 
-    where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
+        where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
     if cnt==ri.nslices(r):
         return
+    
     def loader(subtileid):
         r,m,s,ix,iy = subtileid
         try:
-            img = rawimage.q1roi(r,m,s,ix*512-512, iy*512-512, 1024, 1024)
+            img = rawimage.q1subimg2x2(r,m,s,ix, iy)
         except Exception as e:
             print(e)
             img = np.zeros((1024, 1024), dtype=np.uint8) + 128
@@ -117,15 +108,23 @@ def alignmanysubtiles(r, m, ix, iy):
     def saver(subtileid, tileimg, neighborhoodimg):
         r,m,s,ix,iy = subtileid
         alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg)
+    
+    sdone = set()
     if cnt>0:
-        db.exe(f'''delete from relmontalignq1 
-        where r={r} and m={m} and ix={ix} and iy={iy}''')
+        for row in db.sel(f'''select s from relmontalignq1 
+                     where r={r} and m={m} and ix={ix} and iy={iy}'''):
+            sdone.add(row[0])
     lastimg = None
-    for s in range(ri.nslices(r)):
-        subtileid = (r,m,s,ix,iy)
-        img = loader(subtileid)
-        saver(subtileid, img, lastimg)
-        lastimg = img
+    lasts = -1
+    for s in range(1, ri.nslices(r)):
+        if s not in sdone:
+            subtileid = (r,m,s,ix,iy)
+            img = loader(subtileid)
+            if lasts != s-1:
+                lastimg = loader((r,m,s-1,ix,iy))
+            saver(subtileid, img, lastimg)
+            lastimg = img
+            lasts = s
 
 fac = factory.Factory(nthreads)
     
