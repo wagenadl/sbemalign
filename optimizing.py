@@ -264,17 +264,20 @@ and p indices.
 
 class Index:
     def __init__(self, ad,
-                 crosssnrthr = 20,
-                 intrasnrthr = 20,
-                 edgesnrthr = 20):
+                 crosssnrthr = 25,
+                 intrasnrthr = 25,
+                 edgesnrthr = 8):
         # Let's construct a linear indexing scheme for all our variables
         # We'll put the x coordinates first, followed by all the y coords.
         p = 0
-        (self.intra, p) = self.makeintraindex(ad, p, intrasnrthr)
-        (self.edge, p) = self.makeedgeindex(ad, p, crosssnrthr, edgesnrthr)
+        self.crossthr = crosssnrthr
+        self.intrathr = intrasnrthr
+        self.edgethr = edgesnrthr
+        (self.intra, p) = self.makeintraindex(ad, p)
+        (self.edge, p) = self.makeedgeindex(ad, p)
         self.P = p
 
-    def makeedgeindex(self, ad, p, crossthr, edgethr):
+    def makeedgeindex(self, ad, p):
         edge = []
         for m in range(ad.M):
             idxt = []
@@ -285,15 +288,15 @@ class Index:
                 for ny in range(NY):
                     for nx in range(NX):
                         for s in range(S):
-                            if ad.edge[m][m_].snr[s,ny,nx] > edgethr \
-                               and ad.cross[(m,m_)].snr[s,ny,nx] > crossthr:
+                            if ad.edge[m][m_].snr[s,ny,nx] > self.edgethr \
+                               or ad.cross[(m,m_)].snr[s,ny,nx] > self.crossthr:
                                 idx[s,ny,nx] = p
                                 p += 1
                 idxt.append(idx)
             edge.append(idxt)
         return (edge, p)
         
-    def makeintraindex(self, ad, p, montthr):
+    def makeintraindex(self, ad, p):
         intra = []
         if True: #ad.S>1:
             for m in range(ad.M):
@@ -302,7 +305,7 @@ class Index:
                 for ny in range(NY):
                     for nx in range(NX):
                         for s in range(S):
-                            if ad.intra[m].snr[s,ny,nx]  > montthr:
+                            if ad.intra[m].snr[s,ny,nx]  > self.intrathr:
                                 idx[s,ny,nx] = p
                                 p += 1
                 intra.append(idx)
@@ -310,7 +313,7 @@ class Index:
         
 class Matrix:
     def __init__(self, ad, idx, dim='x',
-                 w_cross=1, w_intra=1, w_edge=1, w_elast=.01):
+                 w_cross=4, w_intra=1, w_edge=.25, w_elast=.01):
         # ad must be of type AllDeltas
         # idx must be of type Index
         # dim must be either "x" or "y".
@@ -336,7 +339,16 @@ class Matrix:
                         idx = self.idx.intra[m][s,ny,nx]
                         if idx>=0:
                             self.diag[idx] += 2*alpha
-            # Need to add elastic constraints to edge points also?
+        for m in range(ad.M):
+            for m_ in range(ad.M):
+                S,NY,NX = ad.edge[m][m_].shape()
+                for s in range(S):
+                    for ny in range(NY):
+                        for nx in range(NX):
+                            idx = self.idx.edge[m][m_][s,ny,nx]
+                            if idx>=0:
+                                self.diag[idx] += 2*alpha
+            
             
     def add_E_cross(self, ad, dim, gamma):
         for m in range(ad.M):
@@ -352,7 +364,7 @@ class Matrix:
                     for ny in range(NY):
                         for nx in range(NX):
                             idx = icrs[s,ny,nx]
-                            if idx>=0:
+                            if idx>=0 and dcrs.snr[s,ny,nx] > self.idx.crossthr:
                                 self.diag[idx] += 2*gamma # for X
                                 if dim=='x':
                                     dmont = montpos[0] - montpos2[0]
@@ -401,7 +413,8 @@ class Matrix:
                 for nx in range(NX):
                     idx = iedge[s,ny,nx]
                     idx1 = iedge[s-1,ny,nx]
-                    if idx>=0 and idx1>=0:
+                    if idx>=0 and idx1>=0 \
+                       and dedge.snr[s,ny,nx] > self.idx.edgethr:
                         self.diag[idx] += 2*beta
                         self.diag[idx1] += 2*beta
                         self.upper[idx1] += -2*beta

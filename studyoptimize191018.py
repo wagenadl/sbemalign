@@ -13,7 +13,7 @@ import scipy.sparse.linalg
 
 import optimizing
 
-r = 3
+r = 27
 
 print('Gathering deltas')
 deltas = optimizing.AllDeltas(r,
@@ -26,8 +26,8 @@ deltas.makemontpos()
 print('Creating index')
 idx = optimizing.Index(deltas)
 print('Creating matrix')
-matx = optimizing.Matrix(deltas, idx, 'x', w_cross=100)
-maty = optimizing.Matrix(deltas, idx, 'y', w_cross=100)
+matx = optimizing.Matrix(deltas, idx, 'x')
+maty = optimizing.Matrix(deltas, idx, 'y')
 print('Solving matrix')
 soln = optimizing.Solution(deltas, matx, maty)
 print('Collecting results')
