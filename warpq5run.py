@@ -4,7 +4,7 @@ import aligndb
 import time
 import sys
 import traceback
-
+import cv2
 import rawimage
 import warp
 import pyqplot as qp
@@ -17,6 +17,12 @@ X = Y = 684*5 # Full size of a q5 image
 NY = NX = 7 # Number of measurement points
 
 root = '/lsi2/dw/170428/runalignq5'
+
+def filename(r, s):
+    return f'{root}/R{r}/S{s}.jpg'
+
+def warpedq5img(r, s):
+    return cv2.imread(filename(r, s), cv2.IMREAD_GRAYSCALE)
 
 def runextent(r):
     res = db.sel(f'''select
@@ -198,7 +204,7 @@ def warpq5run(r, ss=None, usedb=False):
                      dxx[m,:,:], dyy[m,:,:],
                      xxc[m,:,:], yyc[m,:,:],
                      xxm[m], yym[m])
-            cv2.imwrite(f'{root}/R{r}/S{s}.jpg', mdl)
+            cv2.imwrite(filename(r,s), mdl)
             if usedb:
                 db.exe(f'insert into warpq5rundone (r,s) values ({r},{s})')
 
