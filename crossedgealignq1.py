@@ -11,7 +11,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 6
+nthreads = 1
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -77,7 +77,7 @@ def edgecoord(r, m1, m2):
           from slicealignq5pos 
           where r={r} and m1={m1} and m2={m2}''')
         # Take average and upscale to Q1
-        y1 = int(5 * y1 + 4*R)) - MARG
+        y1 = int(5 * y1 + 4*R) - MARG
         y2 = int(5 * y2) - MARG
         dx = int(5 * dx/2)
         return (cc-dx, y1+0*cc, cc+dx, y2+0*cc)
@@ -87,8 +87,8 @@ def edgecoord(r, m1, m2):
           from slicealignq5pos 
           where r={r} and m1={m1} and m2={m2}''')
         # Take average and upscale to Q1
-        x1 = int(5 * (np.mean(x1) + 4*R)) - MARG
-        x2 = int(5 * np.mean(x2)) - MARG
+        x1 = int(5 * x1 + 4*R) - MARG
+        x2 = int(5 * x2) - MARG
         dy = int(5 * dy/2)
         return (x1+0*cc, cc-dy, x2+0*cc, cc+dy)
     else:
