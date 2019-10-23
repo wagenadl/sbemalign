@@ -11,7 +11,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 8
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -73,19 +73,25 @@ def edgecoord(r, m1, m2):
     C = ri.ncolumns(r)
     if m2==m1+C:
         # Two montages top-to-bottom
-        y1,y2 = db.vsel(f'''select y1,y2 from slicealignq5pos 
-          where r={r} and m1={m1} and m2={m2} order by ix1''')
+        x1,y1,x2,y2 = db.vsel(f'''select avg(x1), avg(y1),
+          avg(x2), avg(y2) from slicealignq5pos 
+          where r={r} and m1={m1} and m2={m2} group by ix1 order by ix1''')
         # Take average and upscale to Q1
-        y1 = int(5 * (np.mean(y1) + 4*R)) - MARG
-        y2 = int(5 * np.mean(y2)) - MARG
-        return (cc, y1+0*cc, cc, y2+0*cc)
+        x1 = (5 * x1).astype(int) - MARG
+        x2 = (5 * x2).astype(int) - MARG
+        y1 = (5 * y1 + 4*R).astype(int) - MARG
+        y2 = (5 * y2).astype(int) - MARG
+        return (x1, y1, x1, y2)
     elif m2==m1+1 and m2//C==m1//C:
         # Two montages left-to-right
-        x1,x2 = db.vsel(f'''select x1,x2 from slicealignq5pos 
-          where r={r} and m1={m1} and m2={m2} order by iy1''')
+        x1,x2 = db.vsel(f'''select select avg(x1), avg(y1),
+          avg(x2), avg(y2) from slicealignq5pos 
+          where r={r} and m1={m1} and m2={m2} group by iy1 order by iy1''')
         # Take average and upscale to Q1
-        x1 = int(5 * (np.mean(x1) + 4*R)) - MARG
-        x2 = int(5 * np.mean(x2)) - MARG
+        x1 = (5 * x1 + 4*R).astype(int) - MARG
+        x2 = (5 * x2).astype(int) - MARG
+        y1 = (5 * y1).astype(int) - MARG
+        y2 = (5 * y2).astype(int) - MARG
         return (x1+0*cc, cc, x2+0*cc, cc)
     else:
         raise ValueError(f'Coord request for nonexistent edge: R{r} M{m1}:{m2}')
