@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+
+import sys
+import re
+with sys.stdin as f:
+    lines = f.read().split('\n')
+
+hdr = lines.pop(0)
+sep = lines.pop(0)
+
+hdrflds = hdr.split(' | ')
+sepflds = sep.split('-+-')
+fldlen = []
+l0flds = lines[0].split(' | ')
+
+r = re.compile('\s*(-?\d+)\.\d*\s*')
+
+flen = {}
+for l in lines:
+    ff = l.split(' | ')
+    for n in range(len(ff)):
+        m = r.match(ff[n])
+        if m:
+            pflen = len(m.group(1))
+            if n not in flen or pflen>flen[n]:
+                flen[n] = pflen
+
+def houtput(ff):
+    of = []
+    for n in range(len(ff)):
+        f = ff[n]
+        if n in flen:
+            fmtl = flen[n] + 3
+            fmt = '%%%is' % fmtl
+            f = fmt % f.strip()
+        of.append(f)
+    print(' | '.join(of))
+
+def soutput(ff):
+    of = []
+    for n in range(len(ff)):
+        f = ff[n]
+        if n in flen:
+            f = ''.join([ '-' for k in range(flen[n]+3)])
+        of.append(f)
+    print('-+-'.join(of) + '-')
+            
+
+def loutput(ff):
+    of = []
+    for n in range(len(ff)):
+        f = ff[n]
+        if n in flen:
+            try:
+                fmtl = flen[n]+3
+                fmt = '%%%i.2f' % fmtl
+                f = fmt % float(f)
+            except:
+                f = ''.join([ '*' for k in range(flen[n]+3)])
+        of.append(f)
+    print(' | '.join(of))
+    
+            
+    
+houtput(hdrflds)
+soutput(sepflds)
+for l in lines:
+    loutput(l.split(' | '))
