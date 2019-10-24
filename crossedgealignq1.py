@@ -11,7 +11,7 @@ import numpy as np
 import rawimage
 import factory
 
-nthreads = 1
+nthreads = 6
 
 db = aligndb.DB()
 ri = db.runinfo()
