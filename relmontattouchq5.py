@@ -138,7 +138,7 @@ def alignmanysubtiles(r, m, ix, iy):
             img = np.zeros((684,684), dtype=np.uint8) + 128
         return img 
             
-    def saver(subtileid, tileimg, neighborhoodimg, aux):
+    def saver(subtileid, tileimg, neighborhoodimg):
         r,m,s,ix,iy = subtileid
         rows1 = db.sel(f'''select x1,y1,dx0,dy0,m2 from slicealignq5pos 
         where r={r} and m1={m} and s={s} and ix1={ix} and iy1={iy}''')
@@ -149,13 +149,21 @@ def alignmanysubtiles(r, m, ix, iy):
         for row in rows2:
             alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
 
-    db.exe(f'''delete from relmontattouchq5 
-    where r={r} and m={m} and ix={ix} and iy={iy}''')
-    subtileids = []
+    ssdone = set()
+    for row in db.sel(f'''select s from relmontattouchq5
+    where r={r} and m={m} and ix={ix} and iy={iy}'''):
+        ssdone.add(int(row[0]))
+    
+    lastimg = None
     for s in range(ri.nslices(r)):
-        subtileids.append((r,m,s,ix,iy))
-    swiftir.buildout(subtileids, nbase=11,
-                     loader=loader, saver=saver)
+        if s in ssdone:
+            lastimg = None
+        else:
+            img = loader((r,m,s,ix,iy))
+            if s>0 and lastimg is None:
+                lastimg = loader((r,m,s-1,ix,iy))
+            saver((r,m,s,ix,iy), img, lastimg)
+            lastimg = img
 
 fac = factory.Factory(nthreads)
     
