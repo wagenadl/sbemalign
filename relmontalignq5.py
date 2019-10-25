@@ -106,15 +106,23 @@ def alignmanysubtiles(r, m, ix, iy):
     def saver(subtileid, tileimg, neighborhoodimg):
         r,m,s,ix,iy = subtileid
         alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg)
-    if cnt>0:
-        db.exe(f'''delete from relmontalignq5 
-        where r={r} and m={m} and ix={ix} and iy={iy}''')
+
+    ssdone = set()
+    for row in db.sel(f'''select s from relmontattouchq5
+           where r={r} and m={m} and ix={ix} and iy={iy}'''):
+        ssdone.add(int(row[0]))
+
     lastimg = None
     for s in range(ri.nslices(r)):
-        subtileid = (r,m,s,ix,iy)
-        img = loader(subtileid)
-        saver(subtileid, img, lastimg)
-        lastimg = img
+        if s in ssdone:
+            lastimg = None
+        else:
+            subtileid = (r,m,s,ix,iy)
+            img = loader(subtileid)
+            if s>0 and lastimg is None:
+                lastimg = loader((r,m,s-1,ix,iy))
+            saver(subtileid, img, lastimg)
+            lastimg = img
 
 fac = factory.Factory(nthreads)
     

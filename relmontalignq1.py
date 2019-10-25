@@ -115,16 +115,16 @@ def alignmanysubtiles(r, m, ix, iy):
                      where r={r} and m={m} and ix={ix} and iy={iy}'''):
             sdone.add(row[0])
     lastimg = None
-    lasts = -1
     for s in range(1, ri.nslices(r)):
-        if s not in sdone:
+        if s in sdone:
+            lastimg = None
+        else:
             subtileid = (r,m,s,ix,iy)
             img = loader(subtileid)
-            if lasts != s-1:
+            if lastimg is None:
                 lastimg = loader((r,m,s-1,ix,iy))
             saver(subtileid, img, lastimg)
             lastimg = img
-            lasts = s
 
 fac = factory.Factory(nthreads)
     
