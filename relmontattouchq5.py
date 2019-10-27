@@ -149,10 +149,26 @@ def alignmanysubtiles(r, m, ix, iy):
         for row in rows2:
             alignsubtiles(subtileid, row, tileimg, neighborhoodimg)
 
+    # Figure out what slices have to be done
+    mm2 = set()
+    for row in db.sel(f'''select distinct m2 from slicealignq5pos 
+      where r={r} and m1={m} and ix1={ix} and iy1={iy}'''):
+        mm2.add(row[0])
+    for row in db.sel(f'''select distinct m1 from slicealignq5pos 
+      where r={r} and m2={m} and ix2={ix} and iy2={iy}'''):
+        mm2.add(row[0])
+    msdone = {}
+    for row in db.sel(f'''select s, m2 from relmontattouchq5
+       where r={r} and m={m} and ix={ix} and iy={iy}'''):
+        s = row[0]
+        m2 = row[1]
+        if not s in msdone:
+            msdone[s] = set()
+        msdone[s].add(m2)
     ssdone = set()
-    for row in db.sel(f'''select s from relmontattouchq5
-    where r={r} and m={m} and ix={ix} and iy={iy}'''):
-        ssdone.add(int(row[0]))
+    for s,mm in msdone.items():
+        if mm==mm2:
+            ssdone.add(s)
     
     lastimg = None
     for s in range(ri.nslices(r)):
@@ -179,6 +195,15 @@ def queuealignmanysubtiles(r, m, ix, iy):
     fac.request(alignmanysubtiles, r, m, ix, iy)
 
 def queuealignmontage(r, m):
+    cnt = db.sel(f'''select count(1) from relmontattouchq5 
+    where r={r} and m={m}''')[0][0]
+    cnt1 = db.sel(f'''select count(1) from slicealignq5
+    where r={r} and m1={m}''')[0][0]
+    cnt2 = db.sel(f'''select count(1) from slicealignq5
+    where r={r} and m2={m}''')[0][0]
+    if cnt==cnt1+cnt2:
+        return
+    
     for ix in range(5):
         for iy in range(5):
             queuealignmanysubtiles(r, m, ix, iy)
@@ -188,6 +213,12 @@ maketable()
     
 for r0 in range(ri.nruns()):
     r  = r0 + 1
+    cnt = db.sel(f'''select count(1) from relmontattouchq5 
+    where r={r}''')[0][0]
+    cnt1 = db.sel(f'''select count(1) from slicealignq5
+    where r={r}''')[0][0]
+    if cnt==2*cnt1:
+        continue
     for m in range(ri.nmontages(r)):
         queuealignmontage(r, m)
 
