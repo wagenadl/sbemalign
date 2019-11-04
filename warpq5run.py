@@ -10,6 +10,7 @@ import warp
 import pyqplot as qp
 import numpy as np
 import factory
+import os
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -17,6 +18,8 @@ X = Y = 684*5 # Full size of a q5 image
 NY = NX = 7 # Number of measurement points
 
 root = '/lsi2/dw/170428/runalignq5'
+optitbl = 'optimizeq5rel'
+roughtbl = 'roughq5posrel'
 
 def filename(r, s):
     return f'{root}/R{r}/S{s}.jpg'
@@ -28,8 +31,8 @@ def runextent(r):
     res = db.sel(f'''select
         min(p.x + dx) as x0, min(p.y + dy) as y0,
         {X}+max(p.x + dx) as x1, {Y}+max(p.y + dy) as y1
-        from roughq5pos as p
-        inner join optimizeq5 as o on p.r=o.r and p.m=o.m where p.r={r}''')
+        from {roughtbl} as p
+        inner join {optitbl} as o on p.r=o.r and p.m=o.m where p.r={r}''')
     x0, y0, x1, y1 = res[0]
     x0 = int(x0)
     y0 = int(y0)
@@ -49,7 +52,7 @@ def fullq5img(r, m, s):
 def measuringpoints(r, s):
     '''Returns MxNYxNX matrices of x, y, dx, dy and also m, nx, ny'''
     (m, nx, ny, x, y, dx, dy) =  db.vsel(f'''select m, nx, ny, x, y, dx, dy
-    from optimizeq5 where r={r} and s={s}
+    from {optitbl} where r={r} and s={s}
     order by m,ny,nx''')
     SHP = ( ri.nmontages(r), NY, NX)
     m = np.reshape(m, SHP)
@@ -177,21 +180,20 @@ def warpq5run(r, ss=None, usedb=False):
 
     W = int(x1 - x0 + 1)
     H = int(y1 - y0 + 1)
+    ok = True
 
     ssdone = set()
     if usedb:
         for row in db.sel(f'select s from warpq5rundone where r={r}'):
             ssdone.add(int(row[0]))
 
-    try:
+    if not os.path.exists(f'{root}/R{r}'):
         os.mkdir(f'{root}/R{r}')
-    except:
-        pass
 
     for s in ss:
         if s in ssdone:
-            pass
-        else:
+            continue
+        try:
             print(f'Working on R{r} S{s}')
             (xx, yy, dxx, dyy, m_, nx_, ny_) = measuringpoints(r, s)
             (xxc, yyc) = cornerpoints(xx, yy, xxm, yym, r)
@@ -205,8 +207,15 @@ def warpq5run(r, ss=None, usedb=False):
                      xxc[m,:,:], yyc[m,:,:],
                      xxm[m], yym[m])
             cv2.imwrite(filename(r,s), mdl)
+            if not os.path.exists(filename(r,s)):
+                raise Exception(f'Failed to save {r},{s}: ' + filename(r,s))
             if usedb:
                 db.exe(f'insert into warpq5rundone (r,s) values ({r},{s})')
+        except Exception as e:
+            ok = False
+            print(f'Failed to produce R{r} S{s}: ', e)
+    if not ok:
+        raise Exception(f'Failed somewhere in R{r}')
 
 class MontPos:
     def __init__(self, r):
@@ -335,12 +344,17 @@ if __name__ == '__main__':
     import factory
     import cv2
 
-    nthreads = 8
+    nthreads = 12
     maketable()
     fac = factory.Factory(nthreads)
     for r0 in range(ri.nruns()):
         r = r0+1
+        cnt0 = db.sel(f'select count(*) from {optitbl} where r={r}')[0][0]
         cnt = db.sel(f'select count(*) from warpq5rundone where r={r}')[0][0]
-        if cnt<ri.nslices(r):
-            fac.request(warpq5run, r, None, True)
-                        
+        if cnt0==ri.nslices(r)*ri.nmontages(r)*7*7:
+            if cnt<ri.nslices(r):
+                fac.request(warpq5run, r, None, True)
+        else:
+            print(f'Not attempting R{r}')        
+    print('Shutting down')
+    fac.shutdown()

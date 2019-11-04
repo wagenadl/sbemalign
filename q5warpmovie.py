@@ -12,6 +12,7 @@ import pyqplot as qp
 import numpy as np
 import swiftir
 import cv2
+import factory
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -36,12 +37,11 @@ def makedirs(r):
     if not os.path.exists(overviewtmp(r)):
         os.mkdir(overviewtmp(r))
 
-for r0 in range(ri.nruns()):
-    r = r0 + 1
+def onerun(r):
     detfn = detailfn(r)
     ovfn = overviewfn(r)
     if os.path.exists(ovfn) and os.path.exists(detfn):
-        continue
+        return
 
     print(f'Working on R{r}')
     
@@ -74,9 +74,15 @@ for r0 in range(ri.nruns()):
         print(win.shape)
         win = np.transpose(win)
         cv2.imwrite(f'{ovtmp}/S{s}.jpg', win)
+        im0 = img
     os.system(f'ffmpeg -i "{dettmp}/S%d.jpg"  -c:v libx265 {detfn}')
     os.system(f'ffmpeg -i "{ovtmp}/S%d.jpg"  -c:v libx265 {ovfn}')
     os.system(f'rm -r {ovtmp}')
     os.system(f'rm -r {dettmp}')
 
+fac = factory.Factory(8)
+
+for r0 in range(ri.nruns()):
+    r = r0 + 1
+    fac.request(onerun, r)
 

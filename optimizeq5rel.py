@@ -118,12 +118,16 @@ def optimizerun(r):
 
 maketable()
 fac = factory.Factory(nthreads)
-
+rr,cnts = db.vsel(f'select r,count(*) from {edgetbl} group by r order by r')
+rrr = set()
+for r in rr:
+    rrr.add(r)
 for r0 in range(ri.nruns()):
     r = r0 + 1
-    cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
-    if cnt < 7*7*ri.nmontages(r)*ri.nslices(r):
-        fac.request(optimizerun, r)
+    if r in rrr:
+        cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
+        if cnt < 7*7*ri.nmontages(r)*ri.nslices(r):
+            fac.request(optimizerun, r)
 
 print('waiting for completion')
 fac.shutdown()
