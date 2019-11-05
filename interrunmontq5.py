@@ -71,10 +71,14 @@ def interrunmont(r, m, ix, iy):
     y1c = yc-dy - yy1[m1]
     ix1 = int(x1c/X+.5)
     iy1 = int(y1c/Y+.5)
-    if ix1==0:
+    if ix1<=0:
         ix1=1
-    if iy1==0:
+    elif ix1>=5:
+        ix1=4
+    if iy1<=0:
         iy1=1
+    elif iy1>=5:
+        iy1=4
     img1 = rawimage.q5subimg2x2(r-1, m1, ri.nslices(r-1)-1, ix1, iy1)
 
     # Position in second image that should match center of first
@@ -152,7 +156,6 @@ for r0 in range(1, ri.nruns()):
             where r={r} and m={m}''')[0][0]
             if cnt < IX*IY:
                 fac.request(interrunmany, r, m)
-                interrunmany(r, m)
 fac.shutdown()
 
     
