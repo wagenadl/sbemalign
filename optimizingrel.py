@@ -43,7 +43,7 @@ class Delta:
         S, NY, NX = self.ix.shape
         return f'Delta[ {S} x {NY} x {NX} ]'
 
-def crossdeltas(r, m1, m2, tbl):
+def crossdeltas(r, m1, m2, tbl, s0=0, s1=None):
     '''Finds the points of overlap between montages m and m_ in run r
     according to the named database table.
     Returns a pair of Delta structures.
@@ -54,13 +54,16 @@ def crossdeltas(r, m1, m2, tbl):
     '''
     S = ri.nslices(r)
     N = db.sel(f'''select count(*) from {tbl}
-               where r={r} and m1={m1} and m2={m2} and s=0''')[0][0]
+               where r={r} and m1={m1} and m2={m2} and s={s0}''')[0][0]
     NX = db.sel(f'''select count(distinct ix1) from {tbl}
-                where r={r} and m1={m1} and m2={m2} and s=0''')[0][0]    
+                where r={r} and m1={m1} and m2={m2} and s={s0}''')[0][0]    
     NY = db.sel(f'''select count(distinct iy1) from {tbl}
-                where r={r} and m1={m1} and m2={m2} and s=0''')[0][0]
+                where r={r} and m1={m1} and m2={m2} and s={s0}''')[0][0]
     if NX*NY != N:
         raise Exception(f'Irregular contact matrix for R{r} M{m1}:{m2} in {tbl}')
+    if s1 is None:
+        s1 = S
+    S = s1 - s0
     SHP = (S, NY, NX)
     res1 = Delta(SHP)
     res2 = Delta(SHP)
@@ -70,7 +73,8 @@ def crossdeltas(r, m1, m2, tbl):
         s, ix1,iy1, ix2,iy2,
         dx0, dy0, dx+dxb+dxc,dy+dyb+dyc, snrc
         from {tbl}
-        where r={r} and m1={m1} and m2={m2} order by s,iy1,ix1''')
+        where r={r} and m1={m1} and m2={m2} and s>={s0} and s<{s1}
+        order by s,iy1,ix1''')
     if len(s) != S * N:
         raise Exception(f'Mismatched point count for R{r} M{m1}:{m2} in {tbl}: {len(s)} rather than {S}*{N}={S*N}')
 
@@ -128,14 +132,17 @@ def montageposition(deltas):
     x = np.linalg.solve(A, b)
     return x
 
-def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):    
+def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y', s0=0, s1=None):    
     S = ri.nslices(r)
+    if s1 is None:
+        s1 = S
+    S = s1 - s0
     N = db.sel(f'''select count(*) from {tbl}
-               where {where} and s=0''')[0][0]
+               where {where} and s={s0}''')[0][0]
     NX = db.sel(f'''select count(distinct ix) from {tbl}
-                where {where} and s=0''')[0][0]    
+                where {where} and s={s0}''')[0][0]    
     NY = db.sel(f'''select count(distinct iy) from {tbl}
-                where {where} and s=0''')[0][0]
+                where {where} and s={s0}''')[0][0]
     if NX*NY != N:
         raise Exception(f'Irregular contact matrix for {name} in {tbl}')
     SHP = (S, NY, NX)
@@ -145,7 +152,7 @@ def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):
     (s, ix,iy, x,y, dx,dy, snr) = db.vsel(f'''select
         s, ix,iy, {xcol}, {ycol}, dx+dxb,dy+dyb, snrb
         from {tbl}
-        where {where} order by s,iy,ix''')
+        where ({where}) and s>={s0} and s<{s1} order by s,iy,ix''')
     if len(s) != S*NY*NX:
         raise Exception(f'Mismatched point count for {name} in {tbl}: {len(s)} rather than {S}*{N}={S*N}')
     res.xx = np.reshape(X*ix + x, SHP)
@@ -155,7 +162,7 @@ def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):
     res.snr = np.reshape(snr, SHP)
     return res
 
-def intradeltas(r, m, tbl):
+def intradeltas(r, m, tbl, s0=0, s1=None):
     '''Finds the points where tiles in montage m in run r where compared
     to their (s+1 and s-1) according to the named database table.
     Returns a Delta structure.
@@ -164,9 +171,10 @@ def intradeltas(r, m, tbl):
     (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in montage-global
     coordinates.'''
     return _montagedeltas(r, f'r={r} and m={m}', tbl, name=f'R{r} M{m}',
-                          xcol=f'{X/2}-dx/2', ycol=f'{Y/2}-dy/2')
+                          xcol=f'{X/2}-dx/2', ycol=f'{Y/2}-dy/2',
+                          s0, s1)
 
-def edgedeltas(r, m, m2, tbl):
+def edgedeltas(r, m, m2, tbl, s0=0, s1=None):
     '''Finds the points where tiles in montage m in run r were compared
     to their neighbors (preceding and following slice) according to the
     named database table. Unlike INTRADELTAS, this function looks
@@ -182,13 +190,19 @@ def edgedeltas(r, m, m2, tbl):
     Note that the results here pertain to points in montage m, not in m2.'''
     return _montagedeltas(r, f'r={r} and m={m} and m2={m2}', tbl,
                           name=f'R{r} M{m}:{m2}',
-                          xcol='x', ycol='y')
+                          xcol='x', ycol='y',
+                          s0, s1)
 
 class AllDeltas:
-    def __init__(self, r, crosstbl=None, intratbl=None, edgetbl=None):
+    def __init__(self, r, crosstbl=None, intratbl=None, edgetbl=None,
+                 s0=0, s1=None):
         self.r = r
         self.M = ri.nmontages(r)
-        self.S = ri.nslices(r)
+        self.s0 = s0
+        if s1 is None:
+            s1 = ri.nslices(r)
+        self.s1 = s1
+        self.S = s1 - s0
         if crosstbl is not None:
             self.pullcross(crosstbl)
         if intratbl is not None:
@@ -200,7 +214,7 @@ class AllDeltas:
         self.cross = {}
         for m in range(self.M):
             for m_ in range(m, self.M):
-                d1, d2 = crossdeltas(self.r, m, m_, tbl)
+                d1, d2 = crossdeltas(self.r, m, m_, tbl, self.s0, self.s1)
                 self.cross[(m,m_)] = d1
                 self.cross[(m_,m)] = d2
 
@@ -223,14 +237,14 @@ class AllDeltas:
     def pullintra(self, tbl):
         self.intra = [] # internal points
         for m in range(self.M):
-            self.intra.append(intradeltas(self.r, m, tbl))
+            self.intra.append(intradeltas(self.r, m, tbl, self.s0, self.s1))
 
     def pulledge(self, tbl):
         self.edge = []
         for m in range(self.M):
             delm = []
             for m_ in range(self.M):
-                delm.append(edgedeltas(self.r, m, m_, tbl))
+                delm.append(edgedeltas(self.r, m, m_, tbl, self.s0, self.s1))
             self.edge.append(delm)
 
     '''
