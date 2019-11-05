@@ -213,6 +213,15 @@ def q1roi(r, m, s, x, y, w, h):
 def partialq5img(r, m, s, ix, iy):
     return loadimage(partialq5tile(r, m, s, ix, iy))
 
+def q5subimg2x2(r, m, s, ix, iy):
+    X = 684
+    img = np.zeros((X*2, X*2), dtype=np.uint8)
+    img[:X,:X] = partialq5img(r,m,s,ix-1,iy-1)
+    img[:X,X:] = partialq5img(r,m,s,ix,iy-1)
+    img[X:,:X] = partialq5img(r,m,s,ix-1,iy)
+    img[X:,X:] = partialq5img(r,m,s,ix,iy)
+    return img
+
 def q25img(r, m, s):
     #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
     return loadimage(scaledtile(r, m, s, 25))

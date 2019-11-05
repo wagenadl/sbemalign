@@ -22,6 +22,9 @@ Montage
 Slice
 : all tiles within a run taken at nominally the same z-position
 
+Subvolume
+: Any number of consecutive slices, not necessarily all within a run
+
 Model space
 : coordinate space for global reconstruction
 
@@ -60,8 +63,8 @@ warpq5run.py
 
 #### Dependencies:
 
-- roughq5pos
-- optimizeq5
+- roughq5posrel
+- optimizeq5rel
 
 #### See also:
 
@@ -115,6 +118,27 @@ optimizeq5.py
 By construction, the average of all x-values for montages within a run is zero.
 Same for y-values.
 
+### roughq5posrel
+
+Slightly misnamed, this table contains positions of montages within a run.
+
+#### Constructed by:
+optimizeq5rel.py
+
+#### Dependencies:
+- slicealignq5
+- relmontalignq5
+- relmontattouchq5
+
+#### See also:
+
+- optimizeq5rel
+
+#### Notes
+
+This is exactly as roughposq5, but it relies directly on the relmont tables
+rather than on the cumbersome -relhp tables.
+
 ### optimizeq5
 
 Results of optimization within runs at Q5
@@ -148,6 +172,24 @@ supported
   scaled source tile, use the runToQuad() and quadToRun() function of
   the Transformer class in warpq5run. Not sure which quad a pixel belongs to?
   Use the findInRun() or findInMontage() functions, or the rawToRun() function.
+
+### optimizeq5rel
+
+Results of optimization within runs at Q5
+
+#### Constructed by:
+optimizeq5rel.py
+
+#### Notes:
+
+This is exactly like optimizeq5, but it depends directly on the relmont...
+tables rather than the cumbersome -relhp tables.
+
+#### Dependencies:
+- slicealignq5
+- relmontalignq5
+- relmontattouchq5
+
 
 ### slicealignq5
 

@@ -86,3 +86,4 @@ for r0 in range(ri.nruns()):
     r = r0 + 1
     fac.request(onerun, r)
 
+fac.shutdown()

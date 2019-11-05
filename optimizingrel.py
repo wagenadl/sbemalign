@@ -72,7 +72,7 @@ def crossdeltas(r, m1, m2, tbl):
         from {tbl}
         where r={r} and m1={m1} and m2={m2} order by s,iy1,ix1''')
     if len(s) != S * N:
-        raise Exception(f'Mismatched point count for R{r} M{m1}:{m2} in {tbl}')
+        raise Exception(f'Mismatched point count for R{r} M{m1}:{m2} in {tbl}: {len(s)} rather than {S}*{N}={S*N}')
 
     x1 = ix1*X + X/2 + dx0/2 - dx/2
     x2 = ix2*X + X/2 - dx0/2 + dx/2
@@ -147,7 +147,7 @@ def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y'):
         from {tbl}
         where {where} order by s,iy,ix''')
     if len(s) != S*NY*NX:
-        raise Exception(f'Mismatched point count for {name} in {tbl}')
+        raise Exception(f'Mismatched point count for {name} in {tbl}: {len(s)} rather than {S}*{N}={S*N}')
     res.xx = np.reshape(X*ix + x, SHP)
     res.yy = np.reshape(Y*iy + y, SHP)
     res.dx = np.reshape(dx, SHP)
