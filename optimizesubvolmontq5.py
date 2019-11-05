@@ -46,7 +46,7 @@ def createtable():
     r integer,
     m integer,
     x float,
-    y float''')
+    y float )''')
 
 class SubMontage:
     def __init__(self, r, m, s0=0, s1=None):
@@ -179,10 +179,10 @@ def optisub(z0, nz):
     print(f'Working on Z{z0}+{nz}')
     dp = DeltaPool(z0, nz)
     with db.db:
-        with db.cursor() as c:
+        with db.db.cursor() as c:
             c.execute(f'delete from {outtbl} where z0={z0} and nz={nz}')
             for r in dp.rr:
-                for m in len(dp.montx[r]):
+                for m in range(len(dp.montx[r])):
                     c.execute(f'''insert into {outtbl}
                     (z0,nz,
                     r,m,
@@ -192,10 +192,12 @@ def optisub(z0, nz):
                     {r},{m},
                     {dp.montx[r][m]}, {dp.monty[r][m]})''')
 
-def perhapsoptisub(z0, nz)
+def perhapsoptisub(z0, nz):
     cnt = db.sel(f'select count(*) from {outtbl} where z0={z0} and nz={nz}')
     if cnt[0][0]==0:
         optisub(z0, nz)
+
+createtable()
 
 fac = factory.Factory(nthreads)
 R = ri.nruns()
