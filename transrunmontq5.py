@@ -20,13 +20,15 @@ roughtbl = 'roughq5posrel'
 intertbl = 'interrunq5'
 rexttbl = 'runextentq5'
 
+outtbl= 'transrunmontq5'
+
 X = Y = 684 # Size of tile
 IX = IY = 5
 PICTURES = False
 nthreads = 12
 
 def maketable():
-    db.exe('''create table if not exists interrunmontq5 (
+    db.exe(f'''create table if not exists {outtbl} (
     r integer,
     m integer,
     ix integer,
@@ -48,7 +50,7 @@ def maketable():
     syb float,
     snrb float )''')
 
-def interrunmont(r, m, ix, iy):
+def transrunmont(r, m, ix, iy):
     print(f'Working on r{r} m{m} ix{ix},iy{iy}')
     img = rawimage.partialq5img(r, m, 0, ix, iy)
     x0,y0 = db.sel(f'select x,y from {roughtbl} where r={r} and m={m}')[0]
@@ -125,7 +127,7 @@ def interrunmont(r, m, ix, iy):
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1, apo2)
 
-    db.exe(f'''insert into interrunmontq5
+    db.exe(f'''insert into {outtbl}
     (r, m, ix, iy,
     m2, x, y,
     dx, dy, sx, sy, snr,
@@ -136,26 +138,26 @@ def interrunmont(r, m, ix, iy):
     {dx}, {dy}, {sx}, {sy}, {snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
 
-def interrunmany(r, m):
+def transrunmany(r, m):
     for ix in range(5):
         for iy in range(5):
-            cnt = db.sel(f'''select count(*) from interrunmontq5
+            cnt = db.sel(f'''select count(*) from {outtbl}
             where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
             if cnt==0:
-                interrunmont(r, m, ix, iy)
+                transrunmont(r, m, ix, iy)
 
 maketable()
                 
 fac = factory.Factory(nthreads)
 for r0 in range(1, ri.nruns()):
     r = r0+1
-    cnt = db.sel(f'select count(*) from interrunmontq5 where r={r}')[0][0]
+    cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
     if cnt<ri.nmontages(r)*IX*IY:
         for m in range(ri.nmontages(r)):
-            cnt = db.sel(f'''select count(*) from interrunmontq5
+            cnt = db.sel(f'''select count(*) from {outtbl}
             where r={r} and m={m}''')[0][0]
             if cnt < IX*IY:
-                fac.request(interrunmany, r, m)
+                fac.request(transrunmany, r, m)
 fac.shutdown()
 
     
