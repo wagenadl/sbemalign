@@ -87,6 +87,20 @@ def transrunmont(r, m, ix, iy):
     x1croi = x1c - (ix1-1)*X
     y1croi = y1c - (iy1-1)*Y
 
+    if x1croi<0 or x1croi>2*X or y1croi<0 or y1croi>2*Y:
+        # Have nothing to connect to
+        db.exe(f'''insert into {outtbl}
+            (r, m, ix, iy,
+            m2, x, y,
+            dx, dy, sx, sy, snr,
+            dxb, dyb, sxb, syb, snrb)
+            values
+            ({r}, {m}, {ix}, {iy},
+            {m1}, {x1c}, {y1c},
+            0,0,0,0,0,
+            0,0,0,0,0)''')
+        return
+
     if PICTURES:
         qp.figure('/tmp/s1', 4, 4)
         qp.imsc(img, xx=np.arange(0,X), yy=-np.arange(0,Y))
