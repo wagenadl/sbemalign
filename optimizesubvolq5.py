@@ -1,18 +1,12 @@
 #!/usr/bin/python3
 
-# This optimizes the relative positions of all the montages in a subvolume
-# It does not optimize the positions of individual points.
-# This version is relatively primitive: it only uses cross-montage information
-# within runs and global "interrun" displacements, not "transrun montage"
-# displacements.
-
 crosstbl = 'slicealignq5'
-#intratbl = 'relmontalignq5'
-#edgetbl  = 'relmontattouchq5'
-intertbl = 'interrunq5'
-#transtbl = 'transrunmontq5'
+intratbl = 'relmontalignq5'
+edgetbl  = 'relmontattouchq5'
+transtbl = 'transrunmontq5'
 
-outtbl = 'subvolmontposq5'
+outtbl = 'subvolposq5'
+
 IX = IY = 5
 X = Y = 684
 nz = 200
@@ -46,9 +40,16 @@ def createtable():
     nz integer,
     r integer,
     m integer,
-    x float,
-    y float )''')
+    s integer,
+    nx integer,
+    ny integer,
 
+    x float,
+    y float,
+    dx float,
+    dy float,
+    supported boolean
+    )''')
 
 class TransDelta:
     def __init__(self, r):
@@ -85,6 +86,8 @@ class DeltaPool:
             if sm.r not in self.rundelta:
                 self.rundelta[sm.r] = optimizing.AllDeltas(sm.r,
                                                            crosstbl=crosstbl,
+                                                           intratbl=intratbl,
+                                                           edgetbl=edgetbl,
                                                            s0=sm.s0,
                                                            s1=sm.s1)
         for r in self.rundelta:
@@ -144,19 +147,7 @@ class DeltaPool:
 def optisub(z0, nz):
     print(f'Working on Z{z0}+{nz}')
     dp = DeltaPool(z0, nz)
-    with db.db:
-        with db.db.cursor() as c:
-            c.execute(f'delete from {outtbl} where z0={z0} and nz={nz}')
-            for r in dp.rr:
-                for m in range(len(dp.montx[r])):
-                    c.execute(f'''insert into {outtbl}
-                    (z0,nz,
-                    r,m,
-                    x,y)
-                    values
-                    ({z0},{nz},
-                    {r},{m},
-                    {dp.montx[r][m]}, {dp.monty[r][m]})''')
+
 
 def perhapsoptisub(z0, nz):
     cnt = db.sel(f'select count(*) from {outtbl} where z0={z0} and nz={nz}')
