@@ -25,6 +25,9 @@ Slice
 Subvolume
 : Any number of consecutive slices, not necessarily all within a run
 
+Submontage
+: The intersection of a montage with a subvolume
+
 Model space
 : coordinate space for global reconstruction
 

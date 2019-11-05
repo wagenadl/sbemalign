@@ -172,7 +172,7 @@ def intradeltas(r, m, tbl, s0=0, s1=None):
     coordinates.'''
     return _montagedeltas(r, f'r={r} and m={m}', tbl, name=f'R{r} M{m}',
                           xcol=f'{X/2}-dx/2', ycol=f'{Y/2}-dy/2',
-                          s0, s1)
+                          s0=s0, s1=s1)
 
 def edgedeltas(r, m, m2, tbl, s0=0, s1=None):
     '''Finds the points where tiles in montage m in run r were compared
@@ -191,7 +191,7 @@ def edgedeltas(r, m, m2, tbl, s0=0, s1=None):
     return _montagedeltas(r, f'r={r} and m={m} and m2={m2}', tbl,
                           name=f'R{r} M{m}:{m2}',
                           xcol='x', ycol='y',
-                          s0, s1)
+                          s0=s0, s1=s1)
 
 class AllDeltas:
     def __init__(self, r, crosstbl=None, intratbl=None, edgetbl=None,
