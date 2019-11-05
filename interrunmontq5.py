@@ -33,8 +33,8 @@ def maketable():
     iy integer,
 
     m2 integer,
-    x integer,
-    y integer,
+    x float,
+    y float,
 
     dx float,
     dy float,
