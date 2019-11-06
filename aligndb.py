@@ -80,25 +80,59 @@ class DB:
         else:
             raise ValueError(f'Unknown stage: {stage}')
 
+    class Runlet:
+        def __init__(self, r, s0, s1):
+            self.r = r
+            self.s0 = s0
+            self.s1 = s1
+        def __repr__(self):
+            return f'Runlet(R{self.r} [{self.s0},{self.s1})'
+    class RI:
+        def nruns(self):
+            return self.R
+        def nslices(self, r):
+            return self.SS[r]
+        def nmontages(self, r):
+            return self.MM[r]
+        def z0(self, r):
+            return self.zz0[r]
+        def ncolumns(self, r):
+            if self.MM[r]<=3:
+                return 1
+            else:
+                return 2
+        def nrows(self, r):
+            return self.nmontages(r) // self.ncolumns(r)
+        def findz(self, z):
+            '''Return a (r,s) pair for a given z'''
+            for r0 in range(self.R):
+                r = r0+1
+                z0 = self.zz0[r]
+                if z>=z0 and z<z0+self.SS[r]:
+                    return (r, z-z0)
+            return (None, None)
+        def subvolume(self, z0, nz):
+            '''Returns a list of runlets, spanning the given Z range'''
+            rl = []
+            r0,s0 = self.findz(z0)
+            r1,s1 = self.findz(z0+nz)
+            if s1==0:
+                r1 -= 1
+                s1 = self.nslices(r1)
+            for r in range(r0, r1+1):
+                if r==r0:
+                    s0a = s0
+                else:
+                    s0a = 0
+                if r==r1:
+                    s1a = s1
+                else:
+                    s1a = self.nslices(r)
+                rl.append(DB.Runlet(r, s0a, s1a))
+            return rl
     def runinfo(self):
         ri = self.sel('select r,M,S,z0 from runs')
-        class RI:
-            def nruns(self):
-                return self.R
-            def nslices(self, r):
-                return self.SS[r]
-            def nmontages(self, r):
-                return self.MM[r]
-            def z0(self, r):
-                return self.zz0[r]
-            def ncolumns(self, r):
-                if self.MM[r]<=3:
-                    return 1
-                else:
-                    return 2
-            def nrows(self, r):
-                return self.nmontages(r) // self.ncolumns(r)
-        res = RI()
+        res = DB.RI()
         res.R = len(ri)
         res.MM = {}
         res.SS = {}
@@ -109,4 +143,4 @@ class DB:
             res.SS[r] = row[2]
             res.zz0[r] = row[3]
         return res
-    
+

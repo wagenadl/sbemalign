@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import config
 import re
-import skimage.io
+#import skimage.io
 
 def rawtile(r, m, s):
     '''RAWTILE - Filename for raw image
@@ -59,17 +59,17 @@ def loadimage(url):
     For unknown reasons, opencv's imdecode is slower than imread, so
     file:// is much faster than http://, even if the file system is a
     remote sshfs mount.'''
-    #if url.startswith('file://'):
-    #    url = url[7:]
-    return skimage.io.imread(url)
-    #if re.compile('^[a-z]+://').match(url):
-    #    return resp = urllib.request.Request(url=url)
-    #    with urllib.request.urlopen(resp) as f:
-    #        dat = f.read()
-    #        dat = np.fromfile(f, dtype=np.uint8)
-    #    return cv2.imdecode(dat, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-    #else:
-    #    return cv2.imread(url, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    if url.startswith('file://'):
+        url = url[7:]
+    #return skimage.io.imread(url)
+    if re.compile('^[a-z]+://').match(url):
+        resp = urllib.request.Request(url=url)
+        with urllib.request.urlopen(resp) as f:
+            dat = f.read()
+            dat = np.fromfile(f, dtype=np.uint8)
+        return cv2.imdecode(dat, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    else:
+        return cv2.imread(url, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 
 def loadlocaltif(fn):
     return cv2.imread(fn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
