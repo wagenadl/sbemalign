@@ -3,7 +3,7 @@
 # I will create a db table with (r, m, s, ix, iy, x,y),
 # (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb).
 # The logic will be that s pixel (x',y') fits to neighborhood
-# pixel(x'-dx-dxb,y'-dy-dyb).
+# pixel(x'+dx+dxb,y'+dy+dyb). Neighborhood is s-1.
 # It will be understood that the "b" alignment was centered at
 # (x, y) of the image.
 # Although this information is slightly redundant, I think it will be
