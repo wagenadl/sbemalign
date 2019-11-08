@@ -41,8 +41,10 @@ def interrun(r2):
     if n[0][0]>0:
         return
     print(f'Working on R{r1}:{r2}')
-    
-    img1 = warpq5run.warpedq5img(r1, ri.nslices(r1)-1)
+    s1 = ri.nslices(r1)-1
+    if r1==35:
+      s1 -= 1 
+    img1 = warpq5run.warpedq5img(r1, s1)
     if img1 is None:
         raise Exception(f'Failed to read last image for R{r1}')
         

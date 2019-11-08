@@ -81,7 +81,10 @@ def transrunmont(r, m, ix, iy):
         iy1=1
     elif iy1>=5:
         iy1=4
-    img1 = rawimage.q5subimg2x2(r-1, m1, ri.nslices(r-1)-1, ix1, iy1)
+    s = ri.nslices(r-1)-1
+    if r-1 == 35:
+      s -= 1
+    img1 = rawimage.q5subimg2x2(r-1, m1, s, ix1, iy1)
 
     # Position in second image that should match center of first
     x1croi = x1c - (ix1-1)*X
