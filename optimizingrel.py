@@ -76,7 +76,8 @@ def crossdeltas(r, m1, m2, tbl, s0=0, s1=None):
         where r={r} and m1={m1} and m2={m2} and s>={s0} and s<{s1}
         order by s,iy1,ix1''')
     if len(s) != S * N:
-        raise Exception(f'Mismatched point count for R{r} M{m1}:{m2} in {tbl}: {len(s)} rather than {S}*{N}={S*N}')
+        raise Exception(f'''Mismatched point count for R{r} M{m1}:{m2} in {tbl}:
+        {len(s)} rather than {S}*{N}={S*N}''')
 
     x1 = ix1*X + X/2 + dx0/2 - dx/2
     x2 = ix2*X + X/2 - dx0/2 + dx/2
@@ -163,13 +164,12 @@ def _montagedeltas(r, where, tbl, name, xcol='x', ycol='y', s0=0, s1=None):
     return res
 
 def intradeltas(r, m, tbl, s0=0, s1=None):
-    '''Finds the points where tiles in montage m in run r where compared
-    to their (s+1 and s-1) according to the named database table.
+    '''Finds the points where tiles in montage m in run r were compared
+    to their match at (s-1) according to the named database table.
     Returns a Delta structure.
     In the structure, (dx,dy) corresponds to the optimal shift of
     the corresponding point (xx,yy). That is, a pixel in (r,m,s) at
-    (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in montage-global
-    coordinates.'''
+    (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in (r,m,s-1).'''
     return _montagedeltas(r, f'r={r} and m={m}', tbl, name=f'R{r} M{m}',
                           xcol=f'{X/2}-dx/2', ycol=f'{Y/2}-dy/2',
                           s0=s0, s1=s1)
@@ -183,8 +183,7 @@ def edgedeltas(r, m, m2, tbl, s0=0, s1=None):
     Returns a Delta structure.
     In the structure, (dx,dy) corresponds to the optimal shift of
     the corresponding point (xx,yy). That is, a pixel in (r,m,s) at
-    (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in montage-global
-    coordinates.
+    (xx-dx,yy-dy) corresponds to a pixel at (xx,yy) in (r,m,s-1).
     The shape of the structure should match exactly to the first result
     of CROSSDELTAS(r, m, m2, tbl1) with the appropriate table.
     Note that the results here pertain to points in montage m, not in m2.'''
@@ -247,7 +246,7 @@ class AllDeltas:
                 delm.append(edgedeltas(self.r, m, m_, tbl, self.s0, self.s1))
             self.edge.append(delm)
 
-    '''
+'''
 We will minimize an error function:
 
 E = E_elast + E_intra + E_edge + E_cross
@@ -257,9 +256,14 @@ where
 E_elast = α Σ_ksm [dx_ksm]^2
 
 E_intra = β Σ_k,s>0,m [(dx_ksm - dx_k,s-1,m) - (dxintra_ksm)]^2
-E_edge = β' Σ_t,s>0,m [(dx_tsm - dx_t,s-1,m) - (dxedge_tsm - dxedge_t,s-1,m)]^2
 
-E_cross = γ Σ_t,s,m,m' [dx_tsm - dxcross_ksmm']^2
+(where k=(ix,iy) enumerating the internal points)
+
+E_cross = γ Σ_t,s,m,m' [dx_tsm - dxcross_tsmm']^2
+
+(where t=ix for top-to-bottom overlap or t=iy for left-to-right overlap)
+
+E_edge = β' Σ_t,s>0,m [(dx_tsm - dx_t,s-1,m) - (dxedge_tsm - dxedge_t,s-1,m)]^2
 
 Solve by dE/d dx_p = 0. That yields P linear equations in the dx_p's which
 can be written in matrix form as A dx - b = 0.
@@ -274,7 +278,7 @@ Since x and y are completely independent, we'll solve them in separate steps.
 
 First, we need to construct an index system to convert between k,m / t,m / t,m,m'
 and p indices.
-    '''
+'''
 
 class Index:
     def __init__(self, ad,

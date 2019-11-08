@@ -6,8 +6,6 @@ import sys
 import traceback
 
 import numpy as np
-import scipy.sparse
-import scipy.sparse.linalg
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -17,8 +15,8 @@ MAXX = X*5  # This is correct for our Q5 work
 IX = IY = 5
 
 crosstbl = 'slicealignq5'
-intratbl = 'relmontalignq5'
-edgetbl  = 'relmontattouchq5'
+#intratbl = 'relmontalignq5'
+#edgetbl  = 'relmontattouchq5'
 transtbl = 'transrunmontq5'
 
 def roughtransdelta(r1, m1, r2, m2, thresh):
@@ -275,7 +273,7 @@ if __name__=='__main__':
     img2 = rawimage.partialq5img(r2,m2,0,ix2,iy2)
     dx = xsol[(r1,m1)] - xsol[(r2,m2)] + X*(ix1-ix2)
     dy = ysol[(r1,m1)] - ysol[(r2,m2)] + Y*(iy1-iy2)
-    qp.figure('/tmp/s3', 8, 4)
+    qp.figure('/tmp/s4', 8, 4)
     qp.subplot(1,2,1)
     qp.imsc(img1, xx=np.arange(X), yy=-np.arange(Y))
     qp.marker('+')
