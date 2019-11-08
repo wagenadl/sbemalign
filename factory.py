@@ -6,9 +6,14 @@ import threading
 import queue
 import sys
 import traceback
+import socket
+
+hostname = socket.gethostname()
 
 class Factory:
     def __init__(self, nthr=4):
+        if hostname != 'leechem':
+            nthr = 0
         self.nthr = nthr
         self.fails = {}
         def wrkr():
