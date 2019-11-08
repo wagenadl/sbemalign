@@ -77,11 +77,13 @@ class Factory:
 
     def request(self, *tsk):
         '''Clients call this to add a task to the queue.'''
-        #print('Scheduling', tsk)
-        try:
-            self.qu.put(tsk)
-        except KeyboardInterrupt:
-            sys.exit(1)
+        if self.nthr==0:
+            self.produce(*tsk)
+        else:
+            try:
+                self.qu.put(tsk)
+            except KeyboardInterrupt:
+                sys.exit(1)
 
     def failures(self):
         '''At the end, return dict of failed requests.'''
