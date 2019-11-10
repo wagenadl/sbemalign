@@ -79,7 +79,7 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
         SIZ = (X//2, Y//4)
     else:
         SIZ = (X//2, Y//2)
-    print(f'SIZ is {SIZ}')
+    # print(f'SIZ is {SIZ}')
 
     if neighborhoodimg is None:
         db.exe(f'''insert into relmontattouchq5 
@@ -92,7 +92,7 @@ def alignsubtiles(subtileid, row, tileimg, neighborhoodimg):
         return
 
     win1 = swiftir.extractStraightWindow(tileimg, (x,y), SIZ)
-    print('shape', win1.shape)
+    # print('shape', win1.shape)
     win2 = swiftir.extractStraightWindow(neighborhoodimg, (x,y), SIZ)
     apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)
