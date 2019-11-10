@@ -130,9 +130,16 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
         img2 = np.zeros((684,684), dtype=np.uint8) + 128
     Y,X = img1.shape
     if sidebyside:
-        img1 = img1[:,X//2:]
-        img2 = img2[:,:X//2]
-        dx0 = X//2
+        if r==25 and s>140:
+            dx0 = X//3
+        else:
+            dx0 = X//2
+        x1l = X//2 + dx0//2 - X//4
+        x2l = X//2 - dx0//2 - X//4
+        x1r = x1l+X//2
+        x2r = x2l+X//2
+        img1 = img1[:,x1l:x1r]
+        img2 = img2[:,x2l:x2r
         dy0 = 0
     else:
         img1 = img1[Y//2:,:]
