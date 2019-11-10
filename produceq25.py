@@ -10,7 +10,10 @@ def produceq25(r, m, s, ofn=None):
     ifn = rawimage.rawtile(r, m, s)
     img = rawimage.loadimage(ifn)
     img = rawimage.iscale(img, 5)
-    img = rawimage.to8bit(img, .1)
+    if r==25:
+        img = rawimage.to8bit(img, .1, 10000, 255)
+    else:
+        img = rawimage.to8bit(img, .1)
 
     # Create 5x5 subtiles at 1/5th
     Y,X = img.shape

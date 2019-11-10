@@ -89,18 +89,25 @@ def ihist(img):
     else:
         raise ValueError('Only 8 or 16 bit images are supported')
 
-def to8bit(img, stretch=.1):
+def to8bit(img, stretch=.1, ignorethr=None, subst=None):
     '''TO8BIT - Convert 16-bit image to 8 bits
     im8 = TO8BIT(im16) converts a 16-bit image to 8-bit format, clipping
     extreme values.
     Optional argument STRETCH determines what percentage of pixels gets
     clipped. Default is 0.1%.
     Calling TO8BIT on an 8-bit image has no effect; the contrast is not
-    stretched in that case.'''
+    stretched in that case.
+    If optional argument IGNORETHR is given, pixels blacker than that
+    value are ignored in the histogram calculation. Furthermore, if SUBST
+    is given, those ignored pixels are assigned output value SUBST.'''
     if img.dtype==np.uint8:
         return img
     elif img.dtype==np.uint16:
-        hst = cv2.calcHist([img], [0], None, [65536], [0, 65536])
+        if ignorethr is None:
+            hst = cv2.calcHist([img], [0], None, [65536], [0, 65536])
+        else:
+            hst = cv2.calcHist([img[img>=ignorethr]], [0], None, [65536],
+                               [0, 65536])
         hst = np.cumsum(hst)
         hst = hst / hst[-1]
         lowb = np.argmax(hst>=.01*stretch)
@@ -112,7 +119,10 @@ def to8bit(img, stretch=.1):
             lut -= lowb
             np.floor_divide(lut, (upb-lowb+1) / 256, out=lut, casting='unsafe')
             return lut.astype(np.uint8)
-        return mklut(lowb, upb)[img]
+        res = mklut(lowb, upb)[img]
+        if subst is not None:
+            res[img<ignorethr] = subst
+        return res
     else:
         raise ValueError('Only 8 or 16 bit images are supported')
 
