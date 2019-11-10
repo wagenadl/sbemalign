@@ -108,7 +108,7 @@ def alignmanysubtiles(r, m, ix, iy):
         alignsubtiles(r, m, s, ix, iy, tileimg, neighborhoodimg)
 
     ssdone = set()
-    for row in db.sel(f'''select s from relmontattouchq5
+    for row in db.sel(f'''select s from relmontalignq5
            where r={r} and m={m} and ix={ix} and iy={iy}'''):
         ssdone.add(int(row[0]))
 
@@ -142,7 +142,15 @@ maketable()
     
 for r0 in range(ri.nruns()):
     r  = r0 + 1
+    cnt = db.sel(f'select count(1) from relmontalignq5 where r={r}')
+    if cnt[0][0]==ri.nmontages(r)*ri.nslices(r)*5*5:
+        continue
     for m in range(ri.nmontages(r)):
+        cnt = db.sel(f'''select count(1) from relmontalignq5 
+          where r={r} and m={m}''')
+        if cnt[0][0]==ri.nslices(r)*5*5:
+            continue
+
         queuealignmontage(r, m)
 
 print(f'Waiting for factory to complete tasks')
