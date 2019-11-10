@@ -10,8 +10,8 @@ def produceq25(r, m, s, ofn=None):
     ifn = rawimage.rawtile(r, m, s)
     img = rawimage.loadimage(ifn)
     img = rawimage.iscale(img, 5)
-    if r==25 and s>100:
-        img = rawimage.to8bit(img, .1, 10000, 255)
+    if r==25 and s>140:
+        img = rawimage.to8bit(img, .1, 15000)
     else:
         img = rawimage.to8bit(img, .1)
 
