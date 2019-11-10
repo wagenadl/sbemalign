@@ -11,7 +11,7 @@ def produceq25(r, m, s, ofn=None):
     img = rawimage.loadimage(ifn)
     img = rawimage.iscale(img, 5)
     if r==25 and s>140:
-        img = rawimage.to8bit(img, .1, 15000)
+        img = rawimage.to8bit(img, .1, 15000,200)
     else:
         img = rawimage.to8bit(img, .1)
 
