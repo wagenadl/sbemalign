@@ -139,7 +139,7 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
         x1r = x1l+X//2
         x2r = x2l+X//2
         img1 = img1[:,x1l:x1r]
-        img2 = img2[:,x2l:x2r
+        img2 = img2[:,x2l:x2r]
         dy0 = 0
     else:
         img1 = img1[Y//2:,:]

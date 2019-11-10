@@ -160,7 +160,7 @@ def renderq5(mdl, r, m, s, x0, y0, xx, yy, dx, dy, xc, yc, xm, ym):
                          xm, ym,
                          (r,m,s,nx,ny))
 
-def doone(r, s, usedb):
+def doone(r, s, xxm, yym, W, H, x0, y0, x1, y1, usedb):
     print(f'Working on R{r} S{s}')
     (xx, yy, dxx, dyy, m_, nx_, ny_) = measuringpoints(r, s)
     (xxc, yyc) = cornerpoints(xx, yy, xxm, yym, r)
@@ -214,9 +214,9 @@ def warpq5run(r, ss=None, usedb=False, fac=None):
             continue
         try:
             if fac is None:
-                doone(r, s, usedb)
+                doone(r, s, xxm, yym, W, H, x0, y0, x1, y1, usedb)
             else:
-                fac.request(doone, r, s, usedb)
+                fac.request(doone, r, s, xxm, yym, W, H, x0, y0, x1, y1, usedb)
         except Exception as e:
             ok = False
             print(f'Failed to produce R{r} S{s}: ', e)
@@ -364,3 +364,4 @@ if __name__ == '__main__':
             print(f'Not attempting R{r}')        
     print('Shutting down')
     fac.shutdown()
+
