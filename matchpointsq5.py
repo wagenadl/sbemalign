@@ -84,12 +84,13 @@ class MatchPoints:
         try:
             (s, x1,y1, x2,y2, snr) = db.vsel(f'''select
             s,
-            (ix1+0.5)*{X}+dx0/2-dx/2-dxb/2-dxc/2,
-            (iy1+0.5)*{Y}+dy0/2-dy/2-dyb/2-dyc/2,
-            (ix2+0.5)*{X}-dx0/2+dx/2+dxb/2+dxc/2,
-            (iy2+0.5)*{Y}-dy0/2+dy/2+dyb/2+dyc/2,
+            x1-dx/2-dxb/2-dxc/2,
+            y1-dy/2-dyb/2-dyc/2,
+            x2+dx/2+dxb/2+dxc/2,
+            y2+dy/2+dyb/2+dyc/2,
             snrc from {crosstbl}
-            where r={r} and m1={m1} and m2={m2} {swhere} and snrc>={thr}''')
+            where r={r} and m1={m1} and m2={m2} {swhere} and snrc>={thr}
+            order by ii''')
         except Exception:
             print(f'Cross failed >= {thr} at R{r} M{m1}:{m2} S{s0}-{s1}')
             raise
