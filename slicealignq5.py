@@ -1,29 +1,17 @@
 #!/usr/bin/python3
 
-# I will create a db table with (r, m1, m2, s, ix1, iy1, ix2, iy2),
-# (dx0, dy0), (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb),
+# I will create a db table with (r, m1, m2, s, ii),
+# (x1,y1), (x2,y2), (dx, dy, sx, sy, snr), and (dxb, dyb, sxb, syb, snrb),
 # and (dxc, dyc, sxc, syc, snrc).
-# The logic will be that m2 pixel (x,y) fits to m1
-# pixel(x+dx0-dx-dxb-dxc,y+dy0-dy-dyb-dyc).
-# If dx0>0, it will be understood that the "b" alignment was centered at
-# (dx0+X/4-dx/2, Y/2-dy/2) of the "m1" image, else if dy0>0, the "b" alignment
-# is centered at (X/2-dx/2, dy0+Y/4-dy/2). It is always true that precisely
-# one of dx0 or dy0 is nonzero.
+# The logic will be that m2 pixel (x2+dx/2+dxb/2+dxc/2, y2+dy/2+dyb/2+dyc/2)
+# fits to m1 pixel (x1-dx/2-dxb/2-dxc/2, y1-dy/2-dyb/2-dyc/2).
+# The column ii counts where along the edge the alignment was done.
 # Although this information is slightly redundant, I think it will be
 # convenient to have it all. 
 # I'll call the table SLICEALIGNQ5.
 # I will do the calculation for each of the 5 edge subtiles in Q5.
 # Note that I am _not_ scaling the dx, dy, etc. coordinates back up to Q1.
 # That's why "Q5" is in the table name.
-# I should have picked less stupid sign conventions.
-# Since in my implementation, dx0 is either 0 or X/2, and analogous for dy0,
-# the annoying logic about can be written as
-# (X/2+dx0/2-dx/2, Y/2+dy0/2-dy/2). This is an awful hack, but it does
-# always work. Note that X = Y = 684.
-# Similarly, the matching pixel in m2 is at (X/2-dx0/2+dx/2, Y/2-dy0/2+dy/2).
-# Also worth noting, the matching region is X/2 × Y/4 pixels if dy0>0 or
-# X/4 × Y/2 pixels if dx0>0. This can be written as
-# X/2 - dx0/2 × Y/2 - dy0/2
 
 import aligndb
 import time
@@ -50,12 +38,11 @@ def maketable():
     m1 integer,
     m2 integer,
     s integer,
-    ix1 integer,
-    ix2 integer,
-    iy1 integer,
-    iy2 integer,
-    dx0 float,
-    dy0 float,
+    ii integer,
+    x1 integer,
+    y1 integer,
+    x2 integer,
+    y2 integer,
     dx float,
     dy float,
     sx float,
@@ -72,13 +59,6 @@ def maketable():
     syc float,
     snrc float 
     )''')
-    db.exe('''create or replace view slicealignq5pos as (
-    select r,m1,m2,s,ix1,iy1,ix2,iy2, dx0, dy0,
-    684/2 + dx0/2 - dx/2 - dxb/2 - dxc/2 as x1,
-    684/2 + dy0/2 - dy/2 - dyb/2 - dxc/2 as y1,
-    684/2 - dx0/2 + dx/2 + dxb/2 + dxc/2 as x2,
-    684/2 - dy0/2 + dy/2 + dyb/2 + dyc/2 as y2,
-    snr, snrb, snrc from slicealignq5 )''')
 
 def runinfo():
     ri = db.sel('select r,M,S,z0 from runs')
@@ -141,11 +121,19 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
         img1 = img1[:,x1l:x1r]
         img2 = img2[:,x2l:x2r]
         dy0 = 0
+        ii = iy1
+        x1 = (x1l+x1r)//2 + X*4
+        x2 = (x2l+x2r)//2
+        y1 = y2 = Y//2 + Y*iy1
     else:
         img1 = img1[Y//2:,:]
         img2 = img2[:Y//2,:]
         dx0 = 0
         dy0 = Y//2
+        ii = ix1
+        x1 = x2 = X//2 + X*ix1
+        y1 = Y//2 - dy0/2 + Y*4
+        y2 = Y//2 + dy0/2
     Y,X = img1.shape        
     apo1 = swiftir.apodize(img1)
     apo2 = swiftir.apodize(img2)
@@ -168,10 +156,10 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
     #print(f'{r} {m1}:{m2} {s} {ix1},{iy1}:{ix2}:{iy2} {dx0}+{dx}+{dxb}+{dxc} {dy0}+{dy}+{dyb}+{dyc}')
     
     db.exe(f'''insert into slicealignq5 
-    (r,m1,m2,s,ix1,iy1,ix2,iy2, dx0,dy0,
+    (r,m1,m2,s,ii, x1,y1, x2,y2,
     dx,dy,sx,sy,snr, dxb,dyb,sxb,syb,snrb, dxc,dyc,sxc,syc,snrc)
     values
-    ({r},{m1},{m2},{s},{ix1},{iy1},{ix2},{iy2}, {dx0},{dy0},
+    ({r},{m1},{m2},{s},{ii}, {x1},{y1}, {x2},{y2},
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb},
     {dxc},{dyc},{sxc},{syc},{snrc})''')
