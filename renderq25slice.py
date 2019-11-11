@@ -86,7 +86,7 @@ def perhapsrender(r, s):
     img = renderslice(r, s)
     cv2.imwrite(ofn, img)
 
-fac = factory.Factory(nthreads)
+fac = factory.Factory(12)
 
 for r0 in range(ri.nruns()):
     r = r0+1
