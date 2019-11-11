@@ -91,13 +91,23 @@ def runinfo():
     return res
 ri = runinfo()
 
-def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
+def alignsubtiles(r, m1, m2, s, ii, sidebyside):
     cnt = db.sel(f'''select count(1) from slicealignq5 
     where r={r} and m1={m1} and m2={m2} and s={s}
-    and ix1={ix1} and iy1={iy1}''')
+    and ii={ii}''')
     if cnt[0][0]>0:
         return
-    print(f'Working on r{r} m{m1}:{m2} s{s} {ix1},{iy1}:{ix2},{iy2}')
+    print(f'Working on r{r} m{m1}:{m2} s{s} {ii}')
+    if sidebyside:
+        ix1 = 4
+        iy1 = ii
+        ix2 = 0
+        iy2 = ii
+    else:
+        ix1 = ii
+        iy1 = 4
+        ix2 = ii
+        iy2 = 0
     try:
         img1 = rawimage.partialq5img(r,m1,s,ix1,iy1)
     except Exception as e:
@@ -121,7 +131,6 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
         img1 = img1[:,x1l:x1r]
         img2 = img2[:,x2l:x2r]
         dy0 = 0
-        ii = iy1
         x1 = (x1l+x1r)//2 + X*4
         x2 = (x2l+x2r)//2
         y1 = y2 = Y//2 + Y*iy1
@@ -130,7 +139,6 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
         img2 = img2[:Y//2,:]
         dx0 = 0
         dy0 = Y//2
-        ii = ix1
         x1 = x2 = X//2 + X*ix1
         y1 = Y//2 - dy0/2 + Y*4
         y2 = Y//2 + dy0/2
@@ -167,7 +175,7 @@ def alignsubtiles(r, m1, m2, s, ix1, iy1, ix2, iy2, sidebyside):
 def alignsidebyside(r, m1, m2, s):
     for iy in range(5):
         try:
-            alignsubtiles(r, m1, m2, s, 4,iy, 0,iy, True)
+            alignsubtiles(r, m1, m2, s, iy, True)
         except Exception as e:
             print(e)
             print(f'Failed to align r{r} m{m1}:{m2} s{s} iy{iy}')
@@ -175,7 +183,7 @@ def alignsidebyside(r, m1, m2, s):
 def alignabove(r, m1, m2, s):
     for ix in range(5):
         try:
-            alignsubtiles(r, m1, m2, s, ix,4, ix,0, False)
+            alignsubtiles(r, m1, m2, s, ix, False)
         except Exception as e:
             print(e)
             print(f'Failed to align r{r} m{m1}:{m2} s{s} ix{ix}')
