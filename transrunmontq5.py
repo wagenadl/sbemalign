@@ -16,10 +16,10 @@ import factory
 db = aligndb.DB()
 ri = db.runinfo()
 
-roughtbl = 'roughq5posrel'
-intertbl = 'interrunq5'
-rexttbl = 'runextentq5'
-
+roughtbl = 'solveq5slice'
+intbl = 'interrunq25'
+inq = 25
+outq = 5
 outtbl= 'transrunmontq5'
 
 X = Y = 684 # Size of tile
@@ -53,10 +53,15 @@ def maketable():
 def transrunmont(r, m, ix, iy):
     print(f'Working on r{r} m{m} ix{ix},iy{iy}')
     img = rawimage.partialq5img(r, m, 0, ix, iy)
-    x0,y0 = db.sel(f'select x,y from {roughtbl} where r={r} and m={m}')[0]
-    mm1,xx1,yy1 = db.vsel(f'''select m,x,y from {roughtbl} where r={r-1}
+    x0,y0 = db.sel(f'''select x,y from {roughtbl}
+    where r={r} and m={m} and s=0''')[0]
+    s1 = ri.nslices(r-1) - 1
+    mm1,xx1,yy1 = db.vsel(f'''select m,x,y from {roughtbl} 
+    where r={r-1} and s={s1}
     order by m''')
-    dx,dy = db.sel(f'select dx+dxb, dy+dyb from {intertbl} where r2={r}')[0]
+    dx,dy = db.sel(f'select dx+dxb, dy+dyb from {intbl} where r2={r}')[0]
+    dx *= inq/outq
+    dy *= inq/outq
 
     # Center of tile in run space
     xc = x0 + X*(ix+.5)

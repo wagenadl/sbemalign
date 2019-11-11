@@ -43,8 +43,21 @@ Tile space
 : coordinate space for a tile; defined relative to the enclosing
 montage by way of a grid of matching points that define subtiles
 
-Database tables
----------------
+Currently meaningful programs and tables
+----------------------------------------
+
+- slicealignq5
+- relmontalignq5
+- relmontattouchq5
+- solveq5slice
+- (renderq25slice)
+- interrunq25
+- transrunmontq5
+- solveq5mont
+- solveq5rigidtile
+
+Details of database tables
+--------------------------
 
 These are presented here in order of construction hierarchy, toplevel
 tables first.
