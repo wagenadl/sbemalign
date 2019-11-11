@@ -4,7 +4,7 @@
 # It does not optimize the positions of individual points.
 # See E&R p. 1611
 
-outtbl = 'stitchq5mont'
+outtbl = 'solveq5mont'
 crossthr = 20
 transthr = 15
 transthr_despair = 10

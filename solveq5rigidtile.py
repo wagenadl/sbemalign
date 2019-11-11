@@ -5,8 +5,8 @@
 # It does not optimize the positions of individual points.
 # See E&R p. 1613
 
-intbl = 'stitchq5mont'
-outtbl = 'stitchq5rigidtile'
+intbl = 'solveq5mont'
+outtbl = 'solveq5rigidtile'
 crossthr=20
 transthr=15
 transthr_despair=10
