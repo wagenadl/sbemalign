@@ -7,6 +7,7 @@
 
 outtbl = 'solveq5slice'
 crossthr = 20
+emergthr = 14
 
 IX = IY = 5
 X = Y = 684
@@ -38,16 +39,28 @@ def subvol_slice(r, s):
     R = ri.nrows(r)
     for c in range(C):
         for row in range(R-1):
-            mpp += mp5.MatchPoints.cross(r, row*C+c, (row+1)*C+c,
-                                         s, s+1,
-                                         crossthr,
-                                         True)
-        for c in range(C-1):
-            for row in range(R):
-                mpp += mp5.MatchPoints.cross(r, row*C+c, row*C+c+1,
+            try:
+                mpp += mp5.MatchPoints.cross(r, row*C+c, (row+1)*C+c,
                                              s, s+1,
                                              crossthr,
                                              True)
+            except:
+                mpp += mp5.MatchPoints.cross(r, row*C+c, (row+1)*C+c,
+                                             s, s+1,
+                                             emergthr,
+                                             True)
+        for c in range(C-1):
+            for row in range(R):
+                try:
+                    mpp += mp5.MatchPoints.cross(r, row*C+c, row*C+c+1,
+                                                 s, s+1,
+                                                 crossthr,
+                                                 True)
+                except:
+                    mpp += mp5.MatchPoints.cross(r, row*C+c, row*C+c+1,
+                                                 s, s+1,
+                                                 emergthr,
+                                                 True)
     return mpp
 
 def optislice(r, s):
@@ -85,9 +98,11 @@ fac = factory.Factory(nthreads)
 for r0 in range(ri.nruns()):
     r = r0+1
     fac.request(perhapsoptislice, r, 0)
-    S = ri.nslices(r)
-    if S>1:
-        fac.request(perhapsoptislice, r, S-1)
+    s1 = ri.nslices(r) - 1
+    if r==35:
+        s1 -= 1
+    if s1>0:
+        fac.request(perhapsoptislice, r, s1)
     
 fac.shutdown()
 
