@@ -8,6 +8,8 @@ import os
 import numpy as np
 import rawimage
 import pyqplot as qp
+import factory
+import cv2
 
 X = Y = 684*5 # Full tile size in q5 space!
 
@@ -70,6 +72,30 @@ def renderslice(r, s):
             img[yb+y0:yb+y1, xb+x0:xb+x1] = imm[y0:y1,x0:x1]
     return img
 
+'''
 img = renderslice(5, 0)
 qp.figure('/tmp/s1', img.shape[1]//200, img.shape[0]//200)
 qp.imsc(img)
+'''
+
+def perhapsrender(r, s):
+    ofn = f'/lsi2/dw/170428/slicesq25/R{r}S{s}.jpg'
+    if os.path.exists(ofn):
+        return
+    print(f'Rendering R{r} S{s}')
+    img = renderslice(r, s)
+    cv2.imwrite(ofn, img)
+
+fac = factory.Factory(nthreads)
+
+for r0 in range(ri.nruns()):
+    r = r0+1
+    fac.request(perhapsrender, r, 0)
+    S = ri.nslices(r)
+    if S>1:
+        fac.request(perhapsrender, r, S-1)
+    
+fac.shutdown()
+
+
+
