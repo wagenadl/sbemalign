@@ -97,7 +97,7 @@ class DB:
         def z0(self, r):
             return self.zz0[r]
         def ncolumns(self, r):
-            if self.MM[r]<=3:
+            if self.MM[r]<=3 or r>=51:
                 return 1
             else:
                 return 2
