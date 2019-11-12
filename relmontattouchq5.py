@@ -127,12 +127,8 @@ def alignsubtiles(subtileid, m2, row, tileimg, neighborhoodimg):
     {dx},{dy},{sx},{sy},{snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
         
-def alignmanysubtiles(r, m, m2, ii, iifix):
-    ix,iy = iifix
-    if ix is None:
-        ix = ii
-    if iy is None:
-        iy = ii
+def alignmanysubtiles(r, m, m2, ii, ix, iy):
+    print(f'Working on R{r} M{m}:{m2} {ii} / {ix},{iy}')
     def loader(subtileid):
         r,m,s,ii,ix,iy = subtileid
         print(f'loading r{r} m{m} s{s} ix{ix} iy{iy}')
@@ -152,16 +148,16 @@ def alignmanysubtiles(r, m, m2, ii, iifix):
         for row in rows1:
             alignsubtiles(subtileid, m2, row, tileimg, neighborhoodimg)
         rows2 = db.sel(f'''select
-        x2+dx/2+dxb/2+dxc/2,y2+dy/2+dyb/2+dyc/2
-        from slicealignq5pos 
-        where r={r} and m2={m} and m2={m2} and s={s} and ii={ii}''')
+          x2+dx/2+dxb/2+dxc/2,y2+dy/2+dyb/2+dyc/2
+          from slicealignq5 
+          where r={r} and m2={m} and m2={m2} and s={s} and ii={ii}''')
         for row in rows2:
             alignsubtiles(subtileid, m2, row, tileimg, neighborhoodimg)
 
     # Figure out what slices have to be done
     ssdone = set()
     for row in db.sel(f'''select s from relmontattouchq5
-       where r={r} and m={m} and m2={m2} and ii={ii}'''):
+       where r={r} and m={m} and m2={m2} and ix={ix} and iy={iy}'''):
         s = row[0]
         m2 = row[1]
         ssdone.add(s)
@@ -179,19 +175,19 @@ def alignmanysubtiles(r, m, m2, ii, iifix):
 
 fac = factory.Factory(nthreads)
     
-def queuealignmanysubtiles(r, m, m2, ii, iifix):
+def queuealignmanysubtiles(r, m, m2, ii, ix, iy):
     cnt = db.sel(f'''select count(1) from relmontattouchq5 
-        where r={r} and m={m} and m2={m2} and ii={ii}''')[0][0]
+        where r={r} and m={m} and m2={m2} and ix={ix} and iy={iy}''')[0][0]
     cnt1 = db.sel(f'''select count(1) from slicealignq5
         where r={r} and m1={m} and m2={m2} and ii={ii}''')[0][0]
     cnt2 = db.sel(f'''select count(1) from slicealignq5
         where r={r} and m2={m} and m1={m2} and ii={ii}''')[0][0]
     if cnt == cnt1 + cnt2:
         return
-    fac.request(alignmanysubtiles, r, m, m2, ii, iifix)
+    fac.request(alignmanysubtiles, r, m, m2, ii, ix, iy)
 
 def queuealignmontagepair(r, m, m2, iifix):
-    cnt = db.sel(f'''select count(1) from {outtbl}
+    cnt = db.sel(f'''select count(1) from relmontattouchq5
     where r={r} and m={m} and m2={m2}''')
     cnt1 = db.sel(f'''select count(1) from slicealignq5
     where r={r} and m1={m} and m2={m2}''')[0][0]
@@ -201,7 +197,12 @@ def queuealignmontagepair(r, m, m2, iifix):
         return
     
     for ii in range(5):
-        queuealignmanysubtiles(r, m, m2, ii, iifix)
+        ix, iy = iifix
+        if ix is None:
+            ix = ii
+        if iy is None:
+            iy = ii
+        queuealignmanysubtiles(r, m, m2, ii, ix, iy)
     
     
 def queuealignmontage(r, m):
@@ -221,8 +222,9 @@ def queuealignmontage(r, m):
 #droptable()
 maketable()
     
-for r0 in range(ri.nruns()):
+for r0 in range(50, ri.nruns()):
     r  = r0 + 1
+    print(f'Considering R{r}')
     cnt = db.sel(f'''select count(1) from relmontattouchq5 
     where r={r}''')[0][0]
     cnt1 = db.sel(f'''select count(1) from slicealignq5

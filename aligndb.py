@@ -105,7 +105,7 @@ class DB:
             return self.nmontages(r) // self.ncolumns(r)
         def m2c(self, r, m):
             return m % self.ncolumns(r)
-        def m2r(self, r, m)
+        def m2r(self, r, m):
             return m // self.ncolumns(r)
         def mright(self, r, m):
             if self.m2c(r, m) < self.ncolumns(r)-1:
@@ -113,17 +113,17 @@ class DB:
             else:
                 return None
         def mleft(self, r, m):
-            if self.m2c(r, m) > 0
+            if self.m2c(r, m) > 0:
                 return m-1
             else:
                 return None
         def mabove(self, r, m):
-            if self.m2r(r, m) > 0
+            if self.m2r(r, m) > 0:
                 return m-self.ncolumns(r)
             else:
                 return None
         def mbelow(self, r, m):
-            if self.m2r(r, m) < self.nrows(r)-1
+            if self.m2r(r, m) < self.nrows(r)-1:
                 return m+self.ncolumns(r)
             else:
                 return None
