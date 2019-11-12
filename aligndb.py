@@ -103,6 +103,31 @@ class DB:
                 return 2
         def nrows(self, r):
             return self.nmontages(r) // self.ncolumns(r)
+        def m2c(self, r, m):
+            return m % self.ncolumns(r)
+        def m2r(self, r, m)
+            return m // self.ncolumns(r)
+        def mright(self, r, m):
+            if self.m2c(r, m) < self.ncolumns(r)-1:
+                return m+1
+            else:
+                return None
+        def mleft(self, r, m):
+            if self.m2c(r, m) > 0
+                return m-1
+            else:
+                return None
+        def mabove(self, r, m):
+            if self.m2r(r, m) > 0
+                return m-self.ncolumns(r)
+            else:
+                return None
+        def mbelow(self, r, m):
+            if self.m2r(r, m) < self.nrows(r)-1
+                return m+self.ncolumns(r)
+            else:
+                return None
+            
         def findz(self, z):
             '''Return a (r,s) pair for a given z'''
             for r0 in range(self.R):
