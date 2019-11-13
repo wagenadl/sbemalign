@@ -5,10 +5,6 @@
 # See E&R p. 1611
 
 outtbl = 'solveq5mont'
-crossthr = 20
-crossthr_despair = 12
-transthr = 15
-transthr_despair = 10
 nz = 200
 
 IX = IY = 5
@@ -43,35 +39,17 @@ def subvol_mont(sv):
             first = False
         else:
             for m in range(ri.nmontages(rl.r)):
-                try:
-                    mpp += mp5.MatchPoints.trans(rl.r, m, transthr)
-                except:
-                    try:
-                        mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
-                    except:
-                        print(f'No matchpoints trans R{rl.r-1}:{rl.r} M?:{m}')
+                mpp += mp5.MatchPoints.trans(rl.r, m)
         C = ri.ncolumns(rl.r)
         R = ri.nrows(rl.r)
         for c in range(C):
             for r in range(R-1):
-                try:
-                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
-                                                     rl.s0, rl.s1,
-                                                     crossthr))
-                except:
-                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
-                                                     rl.s0, rl.s1,
-                                                     crossthr_despair))
+                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
+                                                 rl.s0, rl.s1))
         for c in range(C-1):
             for r in range(R):
-                try:
-                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
-                                                     rl.s0, rl.s1,
-                                                     crossthr))
-                except:
-                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
-                                                     rl.s0, rl.s1,
-                                                     crossthr_despair))
+                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
+                                                 rl.s0, rl.s1))
     return mpp
 
 def optisub(z0):

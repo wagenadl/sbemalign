@@ -73,7 +73,7 @@ class MatchPoints:
         s = f'R{self.r1}.M{self.m1}.S{self.s1}'
         return s + f' : R{self.r2}.M{self.m2}.S{self.s2} {n}'
 
-    def cross(r, m1, m2, s0=0, s1=None, thr=20, perslice=False):
+    def cross(r, m1, m2, s0=0, s1=None, thr=None, perslice=False):
         # Returns a single MatchPoints with combined data for all slices,
         # unless PERSLICE is True, in which case a list of MatchPoints
         # for individual slices is returned.
@@ -81,19 +81,33 @@ class MatchPoints:
         if s1 is not None:
             swhere += f' and s<{s1}'
         #print(r, m1, m2, s0, s1, thr, perslice, swhere)
-        try:
-            (s, x1,y1, x2,y2, snr) = db.vsel(f'''select
-            s,
-            x1-dx/2-dxb/2-dxc/2,
-            y1-dy/2-dyb/2-dyc/2,
-            x2+dx/2+dxb/2+dxc/2,
-            y2+dy/2+dyb/2+dyc/2,
-            snrc from {crosstbl}
-            where r={r} and m1={m1} and m2={m2} {swhere} and snrc>={thr}
-            order by ii''')
-        except Exception:
-            print(f'Cross failed >= {thr} at R{r} M{m1}:{m2} S{s0}-{s1}')
-            raise
+        (s, x1,y1, x2,y2, snr) = db.vsel(f'''select
+        s,
+        x1-dx/2-dxb/2-dxc/2,
+        y1-dy/2-dyb/2-dyc/2,
+        x2+dx/2+dxb/2+dxc/2,
+        y2+dy/2+dyb/2+dyc/2,
+        snrc from {crosstbl}
+        where r={r} and m1={m1} and m2={m2} {swhere}
+        order by ii''')
+        if thr is None:
+            thr = .66 * np.median(snr)
+        keep = snr>thr
+        s = s[keep]
+        x1 = x1[keep]
+        y1 = y1[keep]
+        x2 = x2[keep]
+        y2 = y2[keep]
+        snr = snr[keep]
+        if s.size==0:
+            msg = f'Cross failed >= {thr} at R{r} M{m1}:{m2}'
+            if s1 is None:
+                msg += f'S{s0}-end'
+            elif s1==s0+1:
+                msg += f'S{s0}'
+                else:
+                msg += f'S{s0}..{s1-1}'
+            raise Exception(msg)
         if perslice:
             mpp = []
             for s1 in np.unique(s):
@@ -120,24 +134,32 @@ class MatchPoints:
             mp.yy2 = y2
             return mp
         
-    def trans(r2, m2, thr=20, perslice=False):
+    def trans(r2, m2, thr=None, perslice=False):
         # Implicitly, r1=r2-1, s2=0, s1=S(r1)-1.
         # We return a list of MatchPoints, one for each existing m1.
         # If perslice is True, s1 and s2 are stored in the MatchPoints,
         # otherwise, None.
-        try:
-            (m1, x2,y2, x1,y1, snr) = db.vsel(f'''select
-            m2,
-            (ix+0.5)*{X}-dx/2-dxb/2,
-            (iy+0.5)*{Y}-dy/2-dyb/2,
-            x+dx/2+dxb/2,
-            y+dy/2+dyb/2,
-            snrb
-            from {transtbl}
-            where r={r2} and m={m2} and snrb>={thr}''')
-        except Exception:
-            print(f'Trans failed to find any points >= {thr} at R{r2} M{m2}')
-            raise
+        (m1, x2,y2, x1,y1, snr) = db.vsel(f'''select
+        m2,
+        (ix+0.5)*{X}-dx/2-dxb/2,
+        (iy+0.5)*{Y}-dy/2-dyb/2,
+        x+dx/2+dxb/2,
+        y+dy/2+dyb/2,
+        snrb
+        from {transtbl}
+        where r={r2} and m={m2}''')
+        if thr is None:
+            thr = .66 * np.median(snr)
+        keep = snr>thr
+        m1 = m1[keep]
+        x1 = x1[keep]
+        y1 = y1[keep]
+        x2 = x2[keep]
+        y2 = y2[keep]
+        snr = snr[keep]
+        if m1.size==0:
+            msg = f'Trans failed >= {thr} at R{r2-1}:R{r2} M~:{m2}'
+            raise Exception(msg)
         mm1 = np.unique(m1)
         mpp = []
         for m in mm1:
@@ -158,24 +180,32 @@ class MatchPoints:
             mpp.append(mp)
         return mpp
     
-    def intra(r, m, s0, s1, thr):
+    def intra(r, m, s0, s1, thr=None):
         # Returns a list of MatchPoints with data from the intra table
         # for each of the slice pairs in [s0, s1).
         if s1==s0+1:
             return []
-        try:
-            (s, x2,y2, x1,y1, snr) = db.vsel(f'''select
-            s,
-            (ix+0.5)*{X}-dx/2-dxb/2,
-            (iy+0.5)*{Y}-dy/2-dyb/2,
-            (ix+0.5)*{X}+dx/2+dxb/2,
-            (iy+0.5)*{Y}+dy/2+dyb/2,
-            snrb
-            from {intratbl}
-            where r={r} and m={m} and s>{s0} and s<{s1} and snrb>={thr}''')
-        except:
-            print(f'Intra failed for R{r} M{m} S{s0} S{s1}: none > {thr}')
-            raise
+        (s, x2,y2, x1,y1, snr) = db.vsel(f'''select
+        s,
+        (ix+0.5)*{X}-dx/2-dxb/2,
+        (iy+0.5)*{Y}-dy/2-dyb/2,
+        (ix+0.5)*{X}+dx/2+dxb/2,
+        (iy+0.5)*{Y}+dy/2+dyb/2,
+        snrb
+        from {intratbl}
+        where r={r} and m={m} and s>{s0} and s<{s1}''')
+        if thr is None:
+            thr = .66 * np.median(snr)
+        keep = snr>thr
+        s = s[keep]
+        x1 = x1[keep]
+        y1 = y1[keep]
+        x2 = x2[keep]
+        y2 = y2[keep]
+        snr = snr[keep]
+        if s.size==0:
+            msg = f'Intra failed >= {thr} at R{r} M{m} S{s0}..{s1-1}'
+            raise Exception(msg)
         mpp = []
         for s2 in range(s0+1, s1):
             mp = MatchPoints()
@@ -190,24 +220,32 @@ class MatchPoints:
             mpp.append(mp)
         return mpp
 
-    def edge(r, m, s0, s1, thr):
+    def edge(r, m, s0, s1, thr=None):
         # Returns a list of MatchPoints with data from the edge table
         # for each of the slice pairs in [s0, s1).
         if s1==s0+1:
             return []
-        try:
-            (s, x2,y2, x1,y1, snr) = db.vsel(f'''select
-            s,
-            (ix+0.5)*{X}+x-dx/2-dxb/2,
-            (iy+0.5)*{Y}+y-dy/2-dyb/2,
-            (ix+0.5)*{X}+x+dx/2+dxb/2,
-            (iy+0.5)*{Y}+y+dy/2+dyb/2,
-            snrb
-            from {edgetbl}
-            where r={r} and m={m} and s>{s0} and s<{s1} and snrb>={thr}''')
-        except:
-            print(f'Edge failed for R{r} M{m} S{s0} S{s1}: none > {thr}')
-            raise
+        (s, x2,y2, x1,y1, snr) = db.vsel(f'''select
+        s,
+        (ix+0.5)*{X}+x-dx/2-dxb/2,
+        (iy+0.5)*{Y}+y-dy/2-dyb/2,
+        (ix+0.5)*{X}+x+dx/2+dxb/2,
+        (iy+0.5)*{Y}+y+dy/2+dyb/2,
+        snrb
+        from {edgetbl}
+        where r={r} and m={m} and s>{s0} and s<{s1}''')
+        if thr is None:
+            thr = .66 * np.median(snr)
+        keep = snr>thr
+        s = s[keep]
+        x1 = x1[keep]
+        y1 = y1[keep]
+        x2 = x2[keep]
+        y2 = y2[keep]
+        snr = snr[keep]
+        if s.size==0:
+            msg = f'Edge failed >= {thr} at R{r} M{m} S{s1}..{s2-1}'
+            raise Exception(msg)
         mpp = []
         for s2 in range(s0+1, s1):
             mp = MatchPoints()
