@@ -6,6 +6,7 @@
 
 outtbl = 'solveq5mont'
 crossthr = 20
+crossthr_despair = 12
 transthr = 15
 transthr_despair = 10
 nz = 200
@@ -45,19 +46,32 @@ def subvol_mont(sv):
                 try:
                     mpp += mp5.MatchPoints.trans(rl.r, m, transthr)
                 except:
-                    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+                    try:
+                        mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+                    except:
+                        print(f'No matchpoints trans R{rl.r-1}:{rl.r} M?:{m}')
         C = ri.ncolumns(rl.r)
         R = ri.nrows(rl.r)
         for c in range(C):
             for r in range(R-1):
-                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
-                                                 rl.s0, rl.s1,
-                                                 crossthr))
+                try:
+                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
+                                                     rl.s0, rl.s1,
+                                                     crossthr))
+                except:
+                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
+                                                     rl.s0, rl.s1,
+                                                     crossthr_despair))
         for c in range(C-1):
             for r in range(R):
-                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
-                                                 rl.s0, rl.s1,
-                                                 crossthr))
+                try:
+                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
+                                                     rl.s0, rl.s1,
+                                                     crossthr))
+                except:
+                    mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
+                                                     rl.s0, rl.s1,
+                                                     crossthr_despair))
     return mpp
 
 def optisub(z0):
