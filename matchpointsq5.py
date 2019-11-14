@@ -28,6 +28,9 @@ def keepsome(idx, *args):
         res.append(a[idx])
     return res
 
+def fixkey(x):
+    return int(x*1000+.5)
+
 class MatchPoints:
     def __init__(self):
         self.r1 = None
@@ -262,6 +265,27 @@ def index(mpp):
             idx[k2] = k
             k += 1
     return idx
+
+def elasticindex(mpp):
+    # Given a list of MatchPoint objects, construct an index for matrixing
+    # individual points. Return those points as well.
+    k = 0
+    idx = {} # Map from (r,m,s,x,y) to k
+    x = {}
+    y = {}
+    for mp in mpp:
+        for n in range(len(mp.xx1)):
+            k1 = mp.r1, mp.m1, mp.s1, fixkey(mp.xx1[n]), fixkey(mp.yy1[n])
+            k2 = mp.r2, mp.m2, mp.s2, fixkey(mp.xx2[n]), fixkey(mp.yy2[n])
+            idx[k1] = k
+            x[k1] = mp.xx1[n]
+            y[k1] = mp.yy1[n]
+            k += 1
+            idx[k2] = k
+            x[k2] = mp.xx2[n]
+            y[k2] = mp.yy2[n]
+            k += 1
+    return idx, x, y
 
 def deindex(idx, xx):
     res = {}
