@@ -276,8 +276,13 @@ def matrix(mpp, idx, q):
         kp = idx[(mp.r2, mp.m2, mp.s2)]
         w = len(mp.xx1) # Could be changed, of course
         if w==0:
-            raise Exception(f'matchpoints {j} empty for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
-        Dx = np.mean(mp.xp(q) - mp.x(q))
+            if (mp.r1==35 and mp.s1==130 and mp.m1>=6) or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
+                print(f'Ignoring lack of matchpoints {j} for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
+                Dx = 0 
+            else:
+                raise Exception(f'matchpoints {j} empty for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
+        else:
+            Dx = np.mean(mp.xp(q) - mp.x(q))
         A[k,k] += w
         A[kp,kp] += w
         A[k,kp] -= w
