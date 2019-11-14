@@ -43,7 +43,7 @@ class DB:
         raw = self.sel(sql, args)
         nrows = len(raw)
         if nrows==0:
-            return [np.array([])] * nrew
+            return [np.array([])] * ncols
         res = []
         for c in range(ncols):
             if type(raw[0][c])==int:

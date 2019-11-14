@@ -91,7 +91,7 @@ class MatchPoints:
         where r={r} and m1={m1} and m2={m2} {swhere}
         order by ii''')
         if thr is None:
-            thr = .66 * np.median(snr)
+            thr = .5 * np.max(snr)
         keep = snr>thr
         s = s[keep]
         x1 = x1[keep]
@@ -149,7 +149,7 @@ class MatchPoints:
         from {transtbl}
         where r={r2} and m={m2}''')
         if thr is None:
-            thr = .66 * np.median(snr)
+            thr = .5 * np.max(snr)
         keep = snr>thr
         m1 = m1[keep]
         x1 = x1[keep]
@@ -195,7 +195,7 @@ class MatchPoints:
         from {intratbl}
         where r={r} and m={m} and s>{s0} and s<{s1}''')
         if thr is None:
-            thr = .66 * np.median(snr)
+            thr = .5 * np.max(snr)
         keep = snr>thr
         s = s[keep]
         x1 = x1[keep]
@@ -235,7 +235,7 @@ class MatchPoints:
         from {edgetbl}
         where r={r} and m={m} and s>{s0} and s<{s1}''')
         if thr is None:
-            thr = .66 * np.median(snr)
+            thr = .5 * np.max(snr)
         keep = snr>thr
         s = s[keep]
         x1 = x1[keep]

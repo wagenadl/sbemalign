@@ -1,0 +1,544 @@
+Working on R51 S0
+Working on R52 S0
+Working on R52 S249
+Working on R54 S0
+Working on R54 S121
+Working on R53 S0
+52 (52, 0, 0) 0 27.81192077981816 -3673.4554664370326
+52 (52, 1, 0) 0 9.802049737286989 -1229.0827831379463
+52 (52, 2, 0) 0 -9.22782360842855 1222.1481937096833
+52 (52, 3, 0) 0 -28.386146909227186 3680.3900558979853
+54 (54, 0, 121) 121 27.202276127981804 -3673.515712113565
+54 (54, 1, 121) 121 9.302059827485829 -1229.041754341258
+54 (54, 0, 0) 0 27.685611475437838 -3674.6966316881294
+54 (54, 2, 121) 121 -9.041793362210997 1222.5492150081568
+54 (54, 1, 0) 0 9.242713047737798 -1229.9652617452384
+54 (54, 2, 0) 0 -9.190026783716139 1222.3856130967356
+54 (54, 3, 121) 121 -27.46254259848512 3680.0082543025756
+54 (54, 3, 0) 0 -27.738297744476185 3682.2762828358077
+52 (52, 0, 249) 249 30.846683725212387 -3673.274243724806
+53 (53, 0, 0) 0 28.65677224345065 -3676.448306712454
+51 (51, 0, 0) 0 29.834411590877764 -3673.005847067648
+51 (51, 1, 0) 0 10.380573398949707 -1229.0211382622058
+53 (53, 1, 0) 0 9.521277508357166 -1231.5619725545714
+53 (53, 2, 0) 0 -9.894222704781773 1221.2014485977954
+51 (51, 2, 0) 0 -9.929255851308485 1221.4837035525911
+51 (51, 3, 0) 0 -30.285729150151834 3680.5432835798
+53 (53, 3, 0) 0 -28.283827060112518 3686.808831524006
+52 (52, 1, 249) 249 13.474696896628375 -1229.0060389824475
+52 (52, 2, 249) 249 -13.278220304650304 1221.8198207329162
+52 (52, 3, 249) 249 -31.043160345735387 3680.4604622058373
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./renderq25slice.py", line 86, in perhapsrender
+    img = renderslice(r, s)
+  File "./renderq25slice.py", line 21, in renderslice
+    where r={r} and s={s} order by m''')
+Rendering R25 S172
+Rendering R35 S130
+Rendering R51 S0
+Rendering R52 S0
+Rendering R52 S249
+Rendering R53 S0
+Rendering R54 S0
+Rendering R54 S121
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsrender at 0x7fdb5f524ea0>, 35, 130)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./interrunq25.py", line 49, in interrun
+    raise Exception(f'Failed to read last image for R{r1}')
+Working on R35:36
+Traceback:
+Exception:
+  Failed to read last image for R35
+FAILED TO PRODUCE (<function interrun at 0x7fd601033e18>, 36)
+Working on R25:26
+Working on R51:52
+Working on R52:53
+Working on R50:51
+Working on R53:54
+Working on R54:55
+R51:52 [4/4]  19.78   0.27  240.1 |  -0.03   0.10  275.4
+R54:55 [4/3] -25.06  65.02  157.0 |  -0.03   0.03  167.7
+R50:51 [8/4] -93.83 -18.89  118.1 |   0.02  -0.02  116.1
+R52:53 [4/4]  -2.03 -13.15  289.0 |  -0.01  -0.06  286.5
+R53:54 [4/4]   0.24  -1.21  295.3 |   0.07  -0.07  337.8
+R25:26 [12/12] -21.32  17.78   16.3 |   0.52  -0.18   16.1
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 55, in subvol_mont
+    crossthr))
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 93, in cross
+    order by ii''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 65, in optisub
+    mpp = subvol_mont(sv)
+  File "./solveq5mont.py", line 48, in subvol_mont
+    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair)
+  File "/home/wagenaar/sbemtools/realign/matchpointsq5.py", line 137, in trans
+    where r={r2} and m={m2} and snrb>={thr}''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 64, in optisub
+    sv = ri.subvolume(z0, nz)
+  File "/home/wagenaar/sbemtools/realign/aligndb.py", line 147, in subvolume
+    for r in range(r0, r1+1):
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5mont.py", line 80, in perhapsoptisub
+    xm, ym = optisub(z0)
+  File "./solveq5mont.py", line 64, in optisub
+    sv = ri.subvolume(z0, nz)
+  File "/home/wagenaar/sbemtools/realign/aligndb.py", line 147, in subvolume
+    for r in range(r0, r1+1):
+Working on 604+200
+Working on 804+200
+Working on 304+200
+Working on 1104+200
+Working on 104+200
+Working on 204+200
+Working on 404+200
+Working on 504+200
+Working on 1004+200
+Working on 4+200
+Working on 704+200
+Working on 904+200
+Working on 1204+200
+Working on 1604+200
+Working on 1404+200
+Working on 1504+200
+Working on 1304+200
+Working on 1704+200
+Working on 1804+200
+Working on 1904+200
+Trans failed to find any points >= 15 at R6 M0
+Working on 2004+200
+Working on 2104+200
+Trans failed to find any points >= 15 at R6 M1
+Trans failed to find any points >= 15 at R6 M0
+Trans failed to find any points >= 15 at R6 M1
+Trans failed to find any points >= 15 at R6 M2
+Working on 2204+200
+Trans failed to find any points >= 15 at R6 M3
+Trans failed to find any points >= 15 at R6 M2
+Trans failed to find any points >= 15 at R6 M3
+Working on 2304+200
+Trans failed to find any points >= 15 at R6 M4
+Trans failed to find any points >= 15 at R6 M4
+Trans failed to find any points >= 15 at R6 M5
+Trans failed to find any points >= 15 at R6 M5
+Working on 2404+200
+Working on 2504+200
+Working on 2604+200
+Working on 2704+200
+Working on 2804+200
+Working on 2904+200
+Working on 3004+200
+Working on 3104+200
+Working on 3204+200
+Working on 3304+200
+Working on 3404+200
+Working on 3504+200
+Working on 3604+200
+Working on 3704+200
+Working on 3804+200
+Working on 3904+200
+Working on 4004+200
+Working on 4104+200
+Working on 4204+200
+Working on 4304+200
+Working on 4404+200
+Working on 4504+200
+Working on 4604+200
+Working on 4704+200
+Working on 4804+200
+Working on 4904+200
+Working on 5004+200
+Working on 5104+200
+Cross failed >= 20 at R25 M8:10 S163-173
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 4904)
+Working on 5204+200
+Working on 5304+200
+Trans failed to find any points >= 15 at R26 M0
+Trans failed to find any points >= 10 at R26 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 4804)
+Working on 5404+200
+Working on 5504+200
+Trans failed to find any points >= 15 at R28 M0
+Trans failed to find any points >= 10 at R28 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 5204)
+Working on 5604+200
+Working on 5704+200
+Working on 5804+200
+Trans failed to find any points >= 15 at R28 M0
+Trans failed to find any points >= 10 at R28 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 5304)
+Working on 5904+200
+Working on 6004+200
+Working on 6104+200
+Working on 6204+200
+Working on 6304+200
+Working on 6404+200
+Working on 6504+200
+Trans failed to find any points >= 15 at R36 M0
+Trans failed to find any points >= 10 at R36 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 6204)
+Working on 6604+200
+Working on 6704+200
+Working on 6804+200
+Working on 6904+200
+Working on 7004+200
+Trans failed to find any points >= 15 at R36 M0
+Trans failed to find any points >= 10 at R36 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 6104)
+Working on 7104+200
+Working on 7204+200
+Working on 7304+200
+Working on 7404+200
+Working on 7504+200
+Working on 7604+200
+Working on 7704+200
+Working on 7804+200
+Working on 7904+200
+Trans failed to find any points >= 15 at R53 M0
+Trans failed to find any points >= 10 at R53 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 7904)
+Working on 8004+200
+Trans failed to find any points >= 15 at R51 M0
+Trans failed to find any points >= 10 at R51 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 7704)
+Working on 8104+200
+Trans failed to find any points >= 15 at R53 M0
+Trans failed to find any points >= 10 at R53 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 8004)
+Working on 8204+200
+Trans failed to find any points >= 15 at R51 M0
+Trans failed to find any points >= 15 at R55 M0
+Trans failed to find any points >= 10 at R51 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 7804)
+Working on 8304+200
+Trans failed to find any points >= 10 at R55 M0
+Traceback:
+Exception:
+  'NoneType' object is not iterable
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 8104)
+Working on 8404+200
+Working on 8504+200
+Working on 8604+200
+Working on 8704+200
+Working on 8804+200
+Working on 8904+200
+Working on 9004+200
+Working on 9104+200
+Working on 9204+200
+Working on 9304+200
+Working on 9404+200
+Traceback:
+Exception:
+  unsupported operand type(s) for +: 'NoneType' and 'int'
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 9404)
+Working on 9504+200
+Traceback:
+Exception:
+  unsupported operand type(s) for +: 'NoneType' and 'int'
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7f6c20bef378>, 9504)
+/usr/local/lib/python3.6/dist-packages/numpy/core/fromnumeric.py:2957: RuntimeWarning: Mean of empty slice.
+  out=out, **kwargs)
+/usr/local/lib/python3.6/dist-packages/numpy/core/_methods.py:80: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5rigidtile.py", line 114, in perhapsoptisub
+    ( {z0}, {k[0]}, {k[1]}, {k[2]}, {xm[k]}, {ym[k]} )''')
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 29, in wrkr
+    self.produce(*tsk)
+  File "/home/wagenaar/sbemtools/realign/factory.py", line 81, in produce
+    foo(*tsk)
+  File "./solveq5rigidtile.py", line 114, in perhapsoptisub
+    ( {z0}, {k[0]}, {k[1]}, {k[2]}, {xm[k]}, {ym[k]} )''')
+Working on 4+200
+Working on 204+200
+Working on 1004+200
+Working on 604+200
+Working on 904+200
+Working on 304+200
+Working on 804+200
+Working on 504+200
+Working on 704+200
+Working on 1104+200
+Working on 104+200
+Working on 404+200
+Working on 1204+200
+Working on 1304+200
+Working on 1404+200
+Working on 1504+200
+Working on 1604+200
+Working on 1704+200
+Working on 1804+200
+Traceback:
+Exception:
+  column "nan" does not exist
+LINE 4:                 ( 1104, 5, 0, 50, nan, nan )
+                                          ^
+
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7fc3c24b1400>, 1104)
+Working on 1904+200
+Trans failed to find any points >= 15 at R6 M0
+Trans failed to find any points >= 15 at R6 M0
+Trans failed to find any points >= 15 at R6 M1
+Trans failed to find any points >= 15 at R6 M2
+Trans failed to find any points >= 15 at R6 M3
+Trans failed to find any points >= 15 at R6 M4
+Trans failed to find any points >= 15 at R6 M5
+Trans failed to find any points >= 15 at R6 M1
+Traceback:
+Exception:
+  column "nan" does not exist
+LINE 4:                 ( 1204, 5, 0, 150, nan, nan )
+                                           ^
+
+FAILED TO PRODUCE (<function perhapsoptisub at 0x7fc3c24b1400>, 1204)
+Working on 2004+200
+Trans failed to find any points >= 15 at R6 M2
+Trans failed to find any points >= 15 at R6 M3
+Working on 2104+200
+Trans failed to find any points >= 15 at R6 M4
+Trans failed to find any points >= 15 at R6 M5
+Working on 2204+200
+Working on 2304+200
+Working on 2404+200
+Working on 2504+200
+Working on 2604+200
+Working on 2704+200
+Working on 2804+200
+Working on 2904+200
+Working on 3004+200
+Working on 3104+200
+Working on 3204+200
+Working on 3304+200
+Working on 3404+200
+Working on 3504+200
+Working on 3604+200
+Working on 3704+200
+Working on 3804+200
+Working on 3904+200
+Working on 4004+200
+Working on 4104+200
+Working on 4204+200
+Working on 4304+200
+Working on 4404+200
+Working on 4504+200
+Working on 4604+200
+Working on 4704+200
+Skipping 4804+200 - not yet done at mont level
+Skipping 4904+200 - not yet done at mont level
+Working on 5004+200
+Working on 5104+200
+Skipping 5204+200 - not yet done at mont level
+Skipping 5304+200 - not yet done at mont level
+Working on 5404+200
+Working on 5504+200
+Working on 5604+200
+Working on 5704+200
+Working on 5804+200
+Working on 5904+200
+Working on 6004+200
+Skipping 6104+200 - not yet done at mont level
+Skipping 6204+200 - not yet done at mont level
+Working on 6304+200
+Working on 6404+200
+Working on 6504+200
+Working on 6604+200
+Working on 6704+200
+Working on 6804+200
+Working on 6904+200
+Working on 7004+200
+Working on 7104+200
+Working on 7204+200
+Working on 7304+200
+Working on 7404+200
+Working on 7504+200
+Working on 7604+200
+Skipping 7704+200 - not yet done at mont level
+Skipping 7804+200 - not yet done at mont level
+Skipping 7904+200 - not yet done at mont level
+Skipping 8004+200 - not yet done at mont level
+Skipping 8104+200 - not yet done at mont level
+Working on 8204+200
+Working on 8304+200
+Working on 8404+200
+Working on 8504+200
+Working on 8604+200
+Working on 8704+200
+Working on 8804+200
+Working on 8904+200
+Working on 9004+200
+Working on 9104+200
+Working on 9204+200
+Working on 9304+200
+Skipping 9404+200 - not yet done at mont level
+Skipping 9504+200 - not yet done at mont level

@@ -91,9 +91,11 @@ fac = factory.Factory(12)
 for r0 in range(ri.nruns()):
     r = r0+1
     fac.request(perhapsrender, r, 0)
-    S = ri.nslices(r)
-    if S>1:
-        fac.request(perhapsrender, r, S-1)
+    s = ri.nslices(r)-1
+    if r==35:
+         s -= 1
+    if s>0:
+        fac.request(perhapsrender, r, s)
     
 fac.shutdown()
 
