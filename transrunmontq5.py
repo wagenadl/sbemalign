@@ -54,6 +54,8 @@ def transrunmont(r, m, ix, iy):
     x0,y0 = db.sel(f'''select x,y from {roughtbl}
     where r={r} and m={m} and s=0''')[0]
     s1 = ri.nslices(r-1) - 1
+    if r-1==35:
+        s1 -= 1
     mm1,xx1,yy1 = db.vsel(f'''select m,x,y from {roughtbl} 
     where r={r-1} and s={s1}
     order by m''')
