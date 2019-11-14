@@ -6,8 +6,6 @@ import sys
 import traceback
 
 import rawimage
-import warpq5run
-import warp
 import pyqplot as qp
 import numpy as np
 import swiftir
