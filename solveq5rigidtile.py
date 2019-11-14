@@ -108,7 +108,8 @@ R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
 
 for z0 in range(4, Z, nz//2):
-    fac.request(perhapsoptisub, z0)
+    if z0+nz <= ri.z0(R) + ri.nslices(R):
+        fac.request(perhapsoptisub, z0)
     
 fac.shutdown()
 

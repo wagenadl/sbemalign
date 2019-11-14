@@ -144,10 +144,10 @@ class DB:
             '''Returns a list of runlets, spanning the given Z range'''
             rl = []
             r0,s0 = self.findz(z0)
-            r1,s1 = self.findz(z0+nz)
-            if s1==0:
-                r1 -= 1
-                s1 = self.nslices(r1)
+            r1,s1 = self.findz(z0+nz-1)
+            if r1 is None:
+                return []
+            s1 += 1
             for r in range(r0, r1+1):
                 if r==r0:
                     s0a = s0

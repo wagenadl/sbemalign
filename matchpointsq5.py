@@ -19,6 +19,15 @@ import numpy as np
 db = aligndb.DB()
 ri = db.runinfo()
 
+def dynamicthreshold(snrs):
+    return 0.5 * np.max(snrs)
+
+def keepsome(idx, *args):
+    res = []
+    for a in args:
+        res.append(a[idx])
+    return res
+
 class MatchPoints:
     def __init__(self):
         self.r1 = None
@@ -90,48 +99,33 @@ class MatchPoints:
         snrc from {crosstbl}
         where r={r} and m1={m1} and m2={m2} {swhere}
         order by ii''')
-        if thr is None:
-            thr = .5 * np.max(snr)
-        keep = snr>thr
-        s = s[keep]
-        x1 = x1[keep]
-        y1 = y1[keep]
-        x2 = x2[keep]
-        y2 = y2[keep]
-        snr = snr[keep]
-        if s.size==0:
-            msg = f'Cross failed >= {thr} at R{r} M{m1}:{m2}'
-            if s1 is None:
-                msg += f'S{s0}-end'
-            elif s1==s0+1:
-                msg += f'S{s0}'
-            else:
-                msg += f'S{s0}..{s1-1}'
-            raise Exception(msg)
         if perslice:
             mpp = []
             for s1 in np.unique(s):
+                X1,Y1,X2,Y2,SNR = keepsome(s==s1, x1,y1,x2,y2,snr)
+                if thr is None:
+                    dthr = dynamicthreshold(SNR)
+                else:
+                    dthr = thr
                 mp = MatchPoints()
                 mp.r1 = mp.r2 = r
                 mp.m1 = m1
                 mp.m2 = m2
                 mp.s1 = mp.s2 = s1
-                mp.xx1 = x1[s==s1]
-                mp.yy1 = y1[s==s1]
-                mp.xx2 = x2[s==s1]
-                mp.yy2 = y2[s==s1]
+                mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(SNR>dthr, X1,Y1,X2,Y2)
                 mpp.append(mp)
             return mpp
         else:
+            if thr is None:
+                dthr = dynamicthreshold(SNR)
+            else:
+                dthr = thr
             mp = MatchPoints()
             mp.r1 = mp.r2 = r
             mp.m1 = m1
             mp.m2 = m2
             mp.s1 = mp.s2 = None
-            mp.xx1 = x1
-            mp.yy1 = y1
-            mp.xx2 = x2
-            mp.yy2 = y2
+            mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(snr>dthr, X1,Y1,X2,Y2)
             return mp
         
     def trans(r2, m2, thr=None, perslice=False):
@@ -149,7 +143,7 @@ class MatchPoints:
         from {transtbl}
         where r={r2} and m={m2}''')
         if thr is None:
-            thr = .5 * np.max(snr)
+            thr = dynamicthreshold(snr)
         keep = snr>thr
         m1 = m1[keep]
         x1 = x1[keep]
@@ -194,29 +188,19 @@ class MatchPoints:
         snrb
         from {intratbl}
         where r={r} and m={m} and s>{s0} and s<{s1}''')
-        if thr is None:
-            thr = .5 * np.max(snr)
-        keep = snr>thr
-        s = s[keep]
-        x1 = x1[keep]
-        y1 = y1[keep]
-        x2 = x2[keep]
-        y2 = y2[keep]
-        snr = snr[keep]
-        if s.size==0:
-            msg = f'Intra failed >= {thr} at R{r} M{m} S{s0}..{s1-1}'
-            raise Exception(msg)
         mpp = []
         for s2 in range(s0+1, s1):
+            X1,Y1,X2,Y2,SNR = keepsome(s2==s, x1,y1,x2,y2,snr)
             mp = MatchPoints()
             mp.r1 = mp.r2 = r
             mp.m1 = mp.m2 = m
             mp.s1 = s2 - 1
             mp.s2 = s2
-            mp.xx1 = x1[s==s2]
-            mp.yy1 = y1[s==s2]
-            mp.xx2 = x2[s==s2]
-            mp.yy2 = y2[s==s2]
+            if thr is None:
+                dthr = dynamicthreshold(SNR)
+            else:
+                dthr = thr
+            mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(SNR>dthr, X1, Y1, X2, Y2)
             mpp.append(mp)
         return mpp
 
@@ -234,29 +218,19 @@ class MatchPoints:
         snrb
         from {edgetbl}
         where r={r} and m={m} and s>{s0} and s<{s1}''')
-        if thr is None:
-            thr = .5 * np.max(snr)
-        keep = snr>thr
-        s = s[keep]
-        x1 = x1[keep]
-        y1 = y1[keep]
-        x2 = x2[keep]
-        y2 = y2[keep]
-        snr = snr[keep]
-        if s.size==0:
-            msg = f'Edge failed >= {thr} at R{r} M{m} S{s1}..{s2-1}'
-            raise Exception(msg)
         mpp = []
         for s2 in range(s0+1, s1):
+            X1,Y1,X2,Y2,SNR = keepsome(s2==s, x1,y1,x2,y2,snr)
             mp = MatchPoints()
             mp.r1 = mp.r2 = r
             mp.m1 = mp.m2 = m
             mp.s1 = s2 - 1
             mp.s2 = s2
-            mp.xx1 = x1[s==s2]
-            mp.yy1 = y1[s==s2]
-            mp.xx2 = x2[s==s2]
-            mp.yy2 = y2[s==s2]
+            if thr is None:
+                dthr = dynamicthreshold(SNR)
+            else:
+                dthr = thr
+            mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(SNR>dthr, X1, Y1, X2, Y2)
             mpp.append(mp)
         return mpp
 
@@ -296,10 +270,13 @@ def matrix(mpp, idx, q):
     K = len(idx)
     A = np.eye(K) * EPSILON
     b = np.zeros(K)
+    j = 0
     for mp in mpp:
         k = idx[(mp.r1, mp.m1, mp.s1)]
         kp = idx[(mp.r2, mp.m2, mp.s2)]
         w = len(mp.xx1) # Could be changed, of course
+        if w==0:
+            raise Exception(f'matchpoints {j} empty for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
         Dx = np.mean(mp.xp(q) - mp.x(q))
         A[k,k] += w
         A[kp,kp] += w
@@ -307,4 +284,5 @@ def matrix(mpp, idx, q):
         A[kp,k] -= w
         b[k] += w*Dx
         b[kp] -= w*Dx
+        j += 1
     return A, b
