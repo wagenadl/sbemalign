@@ -123,8 +123,8 @@ def transrunmont(r, m, ix, iy):
 
     SIZ = (512, 512)
     win1 = swiftir.extractStraightWindow(img, (X/2,Y/2), SIZ)
-    win2 = swiftir.extractStraightWindow(img1, (x1croi,y1croi), SIZ)
     apo1 = swiftir.apodize(win1)
+    win2 = swiftir.extractStraightWindow(img1, (x1croi,y1croi), SIZ)
     apo2 = swiftir.apodize(win2)
 
     if PICTURES:
@@ -137,7 +137,6 @@ def transrunmont(r, m, ix, iy):
     (dx, dy, sx, sy, snr) = swiftir.swim(apo1, apo2)
     
     win2 = swiftir.extractStraightWindow(img1, (x1croi+dx, y1croi+dy), SIZ)
-    apo1 = swiftir.apodize(win1)
     apo2 = swiftir.apodize(win2)
 
     if PICTURES:
@@ -148,6 +147,20 @@ def transrunmont(r, m, ix, iy):
         qp.imsc(apo2)
     
     (dxb, dyb, sxb, syb, snrb) = swiftir.swim(apo1, apo2)
+
+    if dxb**2 + dyb**2 > 1:
+        win2 = swiftir.extractStraightWindow(img1,
+                                             (x1croi+dx+dxb, y1croi+dy+dyb),
+                                             SIZ)
+        apo2 = swiftir.apodize(win2)
+        (dxc, dyc, sxc, syc, snrc) = swiftir.swim(apo1, apo2)
+        if snrc>snrb:
+            dx += dxb
+            dy += dyb
+            sx = sxb
+            sy = syb
+            snr = snrb
+            dxb, dyb, sxb, syb, snrb = dxc, dyc, sxc, syc, snrc
 
     db.exe(f'''insert into {outtbl}
     (r, m, ix, iy,
