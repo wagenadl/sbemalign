@@ -7,11 +7,6 @@
 
 intbl = 'solveq5mont'
 outtbl = 'solveq5rigidtile'
-crossthr=20
-transthr=15
-transthr_despair=10
-intrathr=20
-edgethr=10
 nz = 200
 
 IX = IY = 5
@@ -47,29 +42,22 @@ def subvol_rigidtile(sv):
             first = False
         else:
             for m in range(ri.nmontages(rl.r)):
-                try:
-                    mpp += mp5.MatchPoints.trans(rl.r, m, transthr,
-                                                 perslice=True)
-                except:
-                    mpp += mp5.MatchPoints.trans(rl.r, m, transthr_despair,
-                                                 perslice=True)
+                mpp += mp5.MatchPoints.trans(rl.r, m, perslice=True)
         C = ri.ncolumns(rl.r)
         R = ri.nrows(rl.r)
         for c in range(C):
             for r in range(R-1):
                 mpp += mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
                                              rl.s0, rl.s1,
-                                             crossthr,
                                              perslice=True)
         for c in range(C-1):
             for r in range(R):
                 mpp += mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
                                              rl.s0, rl.s1,
-                                             crossthr,
                                              perslice=True)
         for m in range(ri.nmontages(rl.r)):
-            mpi = mp5.MatchPoints.intra(rl.r, m, rl.s0, rl.s1, intrathr)
-            mpe = mp5.MatchPoints.edge(rl.r, m, rl.s0, rl.s1, edgethr)
+            mpi = mp5.MatchPoints.intra(rl.r, m, rl.s0, rl.s1)
+            mpe = mp5.MatchPoints.edge(rl.r, m, rl.s0, rl.s1)
             mpp += mp5.combine(mpi, mpe)
     return mpp
 
