@@ -163,7 +163,11 @@ class MatchPoints:
             mp.r2 = r2
             mp.m2 = m2
             if perslice:
-                mp.s1 = ri.nslices(r2-1) - 1
+                r1 = r2 - 1
+                s1 = ri.nslices(r2-1) - 1
+                if r1==35:
+                    s1 -= 1
+                mp.s1 = s1
                 mp.s2 = 0
             else:
                 mp.s1 = mp.s2 = None
