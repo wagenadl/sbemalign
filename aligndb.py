@@ -35,11 +35,15 @@ class DB:
         '''VSEL - Like SEL, but returns results as a list of numpy arrays.
         VSEL(sql, args) executes the SQL code, interpolating ARGS for "%s"
         placeholders, and returns the results as a list of numpy arrays.'''
+        with self.db:
+            with self.db.cursor() as c:
+                c.execute(sql, args)
+                ncols = len(c.description)
+                raw = c.fetchall()
         raw = self.sel(sql, args)
         nrows = len(raw)
         if nrows==0:
-            return None
-        ncols = len(raw[0])
+            return [np.array([])] * nrew
         res = []
         for c in range(ncols):
             if type(raw[0][c])==int:

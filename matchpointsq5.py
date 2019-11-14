@@ -105,7 +105,7 @@ class MatchPoints:
                 msg += f'S{s0}-end'
             elif s1==s0+1:
                 msg += f'S{s0}'
-                else:
+            else:
                 msg += f'S{s0}..{s1-1}'
             raise Exception(msg)
         if perslice:
