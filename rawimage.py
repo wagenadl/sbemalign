@@ -232,6 +232,15 @@ def q5subimg2x2(r, m, s, ix, iy):
     img[X:,X:] = partialq5img(r,m,s,ix,iy)
     return img
 
+def fullq5img(r, m, s):
+    X = 684
+    img = np.zeros((5*X,5*X), dtype=np.uint8)
+    for ix in range(5):
+        for iy in range(5):
+            im1 = partialq5img(r,m,s,ix,iy)
+            img[iy*X:(iy+1)*X,ix*X:(ix+1)*X] = im1
+    return img
+
 def q25img(r, m, s):
     #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
     return loadimage(scaledtile(r, m, s, 25))
