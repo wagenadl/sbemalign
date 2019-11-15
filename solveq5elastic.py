@@ -96,14 +96,16 @@ def optisub(z0):
     mpp = subvol_elastic(sv)
     subtract_mont(z0, mpp)
     subtract_rigid(z0, mpp)
-    idx, x, y = mp5.elasticindex(mpp)
-    Ax, bx = mp5.elasticmatrix(mpp, idx, 0)
-    Ay, by = mp5.elasticmatrix(mpp, idx, 1)
-    dx = scipy.sparse.spsolve(Ax, bx)
-    dy = scipy.sparse.spsolve(Ay, by)
-    dx = mp5.deindex(idx, dx)
-    dy = mp5.deindex(idx, dy)
-    return x, y, dx, dy
+    mp5.assignK(mpp)
+    ap = mp5.allpoints(mpp)
+    idx = mp5.elasticindex(mpp)
+    Ax, bx = mp5.elasticmatrix(mpp, idx, ap, 0)
+    Ay, by = mp5.elasticmatrix(mpp, idx, ap, 1)
+    dx = scipy.sparse.linalg.spsolve(Ax.tocsr(), bx)
+    dy = scipy.sparse.linalg.spsolve(Ay.tocsr(), by)
+    dx = mp5.elasticdeindex(idx, dx)
+    dy = mp5.elasticdeindex(idx, dy)
+    return ap, dx, dy
 
 def perhapsoptisub(z0):
     cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
@@ -114,16 +116,19 @@ def perhapsoptisub(z0):
     if cnt[0][0]>0:
         return
     print(f'Working on {z0}+{nz}')
-    x, y, dx, dy = optisub(z0)
+    ap, dx, dy = optisub(z0)
     with db.db:
         with db.db.cursor() as c:
-            for k in x:
-                r,m,s = k
-                c.execute(f'''insert into {outtbl}
-                ( z0, r, m, s, x, y, dx, dy )
-                values
-                ( {z0}, {r}, {m}, {s},
-                  {x[k]}, {y[k]}, {dx[k]}, {dy[k]} )''')
+            for rms,xy in ap.items():
+                r,m,s = rms
+                dx1 = dx[rms]
+                dy1 = dy[rms]
+                for k in range(len(xy[0])):
+                    c.execute(f'''insert into {outtbl}
+                    ( z0, r, m, s, x, y, dx, dy )
+                    values
+                    ( {z0}, {r}, {m}, {s},
+                    {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
         
 createtable()
 

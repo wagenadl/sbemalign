@@ -15,6 +15,8 @@ X = Y = 684
 
 import aligndb
 import numpy as np
+import scipy.sparse
+import scipy.sparse.linalg
 
 db = aligndb.DB()
 ri = db.runinfo()
@@ -266,26 +268,87 @@ def index(mpp):
             k += 1
     return idx
 
+def assignK(mpp):
+    '''Given a list of MatchPoint objects, modifies each to assign a unique
+    "k" value to each point within a tile.'''
+    kkk = {} # Map from (r,m,s) to last-used k value.
+    for mp in mpp:
+        rms = mp.r1, mp.m1, mp.s1
+        if rms not in kkk:
+            kkk[rms] = 0
+        kk = np.zeros(mp.xx1.shape, dtype=int)
+        for n in range(len(mp.xx1)):
+            kk[n] = kkk[rms]
+            kkk[rms] += 1
+        mp.kk1 = kk
+
+        rms = mp.r2, mp.m2, mp.s2
+        if rms not in kkk:
+            kkk[rms] = 0
+        kk = np.zeros(mp.xx2.shape, dtype=int)
+        for n in range(len(mp.xx2)):
+            kk[n] = kkk[rms]
+            kkk[rms] += 1
+        mp.kk2 = kk
+
+def allpoints(mpp):
+    '''Returns a map from (r,m,s) to a pair of x,y vectors organized by k.
+    You must call assignK first.'''
+    res = {} # map from rms to pairs of vectors
+    for mp in mpp:
+        rms = mp.r1, mp.m1, mp.s1
+        if rms not in res:
+            res[rms] = [np.zeros(0), np.zeros(0)]
+        K = np.max(mp.kk1)+1
+        if res[rms][0].size < K:
+            res[rms][0].resize(K)
+            res[rms][1].resize(K)
+        for n in range(len(mp.xx1)):
+            res[rms][0][mp.kk1[n]] = mp.xx1[n]
+            res[rms][1][mp.kk1[n]] = mp.yy1[n]
+
+        rms = mp.r2, mp.m2, mp.s2
+        if rms not in res:
+            res[rms] = [np.zeros(0), np.zeros(0)]
+        K = np.max(mp.kk2)+1
+        if res[rms][0].size < K:
+            res[rms][0].resize(K)
+            res[rms][1].resize(K)
+        for n in range(len(mp.xx2)):
+            res[rms][0][mp.kk2[n]] = mp.xx2[n]
+            res[rms][1][mp.kk2[n]] = mp.yy2[n]
+    return res
+
 def elasticindex(mpp):
     # Given a list of MatchPoint objects, construct an index for matrixing
-    # individual points. Return those points as well.
-    k = 0
-    idx = {} # Map from (r,m,s,x,y) to k
-    x = {}
-    y = {}
+    # individual points. The index is from (r,m,s,k) to a matrix index.
+    # See E&R p. 1615 for k. (On that page, (r,m,s) is summarized as "t".)
+    p = 0 # Confusingly, the equivalent variable is called "k" in INDEX,
+    # ... but I am reserving k here for the localized variable.
+    idx = {} # Map from (r,m,s,k) to p, where p is a matrix entry
     for mp in mpp:
         for n in range(len(mp.xx1)):
-            k1 = mp.r1, mp.m1, mp.s1, fixkey(mp.xx1[n]), fixkey(mp.yy1[n])
-            k2 = mp.r2, mp.m2, mp.s2, fixkey(mp.xx2[n]), fixkey(mp.yy2[n])
-            idx[k1] = k
-            x[k1] = mp.xx1[n]
-            y[k1] = mp.yy1[n]
-            k += 1
-            idx[k2] = k
-            x[k2] = mp.xx2[n]
-            y[k2] = mp.yy2[n]
-            k += 1
-    return idx, x, y
+            p1 = mp.r1, mp.m1, mp.s1, mp.kk1[n]
+            p2 = mp.r2, mp.m2, mp.s2, mp.kk2[n]
+            idx[p1] = p
+            p += 1
+            idx[p2] = p
+            p += 1
+    return idx
+
+def elasticdeindex(idx, xx):
+    '''idx must be a map of (r,m,s,k) to p, and xx must be a p-vector.
+    Result is a map of (r,m,s) to k-vectors.'''
+    res = {}
+    for rmsk,p in idx.items():
+        rms = rmsk[0], rmsk[1], rmsk[2]
+        k = rmsk[3]
+        if rms not in res:
+            res[rms] = np.zeros(k+1)
+        if res[rms].size < k + 1:
+            res[rms].resize(k+1)
+        res[rms][k] = xx[p]
+    return res
 
 def deindex(idx, xx):
     res = {}
@@ -293,7 +356,7 @@ def deindex(idx, xx):
         res[k] = xx[v]
     return res
     
-def matrix(mpp, idx, q):
+def matrix(mpp, idx, ax):
     EPSILON = 1e-6
     K = len(idx)
     A = np.eye(K) * EPSILON
@@ -304,13 +367,15 @@ def matrix(mpp, idx, q):
         kp = idx[(mp.r2, mp.m2, mp.s2)]
         w = len(mp.xx1) # Could be changed, of course
         if w==0:
-            if (mp.r1==35 and mp.s1==130 and mp.m1>=6) or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
-                print(f'Ignoring lack of matchpoints {j} for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
+            loc = f'R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}'
+            if (mp.r1==35 and mp.s1==130 and mp.m1>=6) \
+               or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
+                print(f'Ignoring lack of matchpoints {j} for {loc}')
                 Dx = 0 
             else:
-                raise Exception(f'matchpoints {j} empty for R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}')
+                raise Exception(f'matchpoints {j} empty for {loc}')
         else:
-            Dx = np.mean(mp.xp(q) - mp.x(q))
+            Dx = np.mean(mp.xp(ax) - mp.x(ax))
         A[k,k] += w
         A[kp,kp] += w
         A[k,kp] -= w
@@ -319,3 +384,82 @@ def matrix(mpp, idx, q):
         b[kp] -= w*Dx
         j += 1
     return A, b
+
+def elasticmatrix(mpp, idx, ap, ax):
+    EPSILON = 1e-6
+    K = len(idx)
+    # Fill A with E_stable
+    A = scipy.sparse.diags([np.ones(K) * EPSILON], [0], (K,K), "dok")
+    b = np.zeros(K)
+    j = 0
+    # Next, add E_point
+    for mp in mpp:
+        if mp.s1==mp.s2:
+            w = 1
+        else:
+            w = .25
+        for n in range(len(mp.xx1)):
+            p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
+            pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
+            Dx = mp.xp(ax)[n] - mp.x(ax)[n]
+        A[p,p] += w
+        A[pp,pp] += w
+        A[p,pp] -= w
+        A[pp,p] -= w
+        b[p] += w*Dx
+        b[pp] -= w*Dx
+    # Finally, add E_elast
+    Q = 4
+    def distfoo(dist2):
+        D0 = 100**2 # Anything within 100 px should be taken very seriously
+        return 1/(dist2/D0 + 1)
+    for mp in mpp:
+        rms = (mp.r1, mp.m1, mp.s1)
+        xx = ap[rms][0]
+        yy = ap[rms][1]
+        for n in range(len(mp.xx1)):
+            k = mp.kk1[n]
+            dx = xx[k] - xx
+            dy = yy[k] - yy
+            dst = dx**2 + dy**2
+            # Now, we need to find the Q points with least dst, not
+            # counting k itself.
+            if len(dst)>Q+1:
+                kk = np.argpartition(dst, Q+1)
+                kk = kk[:Q+1]
+            else:
+                kk = np.arange(len(dst))
+            kk = kk[kk!=k]
+            p = idx[(mp.r1, mp.m1, mp.s1, k)]
+            for kstar in kk:
+                pstar = idx[(mp.r1, mp.m1, mp.s1, kstar)]
+                w = distfoo(dst[kstar])
+                A[p,p] += w
+                A[pp,pp] += w
+                A[p,pp] -= w
+                A[pp,p] -= w
+
+        rms = (mp.r2, mp.m2, mp.s2)
+        xx = ap[rms][0]
+        yy = ap[rms][1]
+        for n in range(len(mp.xx2)):
+            k = mp.kk2[n]
+            dx = xx[k] - xx
+            dy = yy[k] - yy
+            dst = dx**2 + dy**2
+            # Now, we need to find the Q points with least dst, not
+            # counting k itself.
+            kk = np.argsort(dst)
+            kk = kk[1:]
+            if len(kk)>Q:
+                kk = kk[:Q]
+            p = idx[(mp.r2, mp.m2, mp.s2, k)]
+            for kstar in kk:
+                pstar = idx[(mp.r2, mp.m2, mp.s2, kstar)]
+                w = distfoo(dst[kstar])
+                A[p,p] += w
+                A[pp,pp] += w
+                A[p,pp] -= w
+                A[pp,p] -= w
+    return A, b
+    
