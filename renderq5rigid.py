@@ -50,7 +50,7 @@ def renderslice(z0, r, s):
     R = ri.nrows(r)
     C = ri.ncolumns(r)
 
-    (z0,y0,W,H) = imagespace(z0)
+    (x0,y0,W,H) = imagespace(z0)
     img = np.zeros((H,W), dtype=np.uint8) + 255
 
     if C==1:
@@ -60,7 +60,7 @@ def renderslice(z0, r, s):
         for row in range(R-1):
             yjoin[row+1] = int((yyb[row] + yyt[row+1])/2 + .5)
         for row in range(R):
-            print(f'Loading fullq5img {r} {row} {s}')
+            print(f'  Loading fullq5img {r} {row} {s}')
             im1 = rawimage.fullq5img(r, row, s)
             yt = yjoin[row] # in model coordinates
             yb = yjoin[row+1]
@@ -128,12 +128,15 @@ if argc>=4:
 else:
     s = None
 
+if s is None:
+   fac = factory.Factory(12)
+
 def rendersvslice(z0, r, s):
     odir = f'/lsi2/dw/170428/rigidq5/Z{z0}'
-    if not sys.path.exist(odir):
-        sys.mkdir(odir)
+    if not os.path.exists(odir):
+        os.mkdir(odir)
     ofn = odir + f'/R{r}S{s}.jpg'
-    if not sys.path.exist(ofn):
+    if not os.path.exists(ofn):
         print(f'Rendering R{r}S{s} in z0={z0}')
         img, x0, y0 = renderslice(z0, r, s)
         rawimage.saveimage(img, ofn)
@@ -145,11 +148,10 @@ def rendersvrun(z0, r, s):
             if rl.r==r:
                 ss = range(rl.s0, rl.s1)
         for s in ss:
-            rendersvslice(z0, r, s)
+            fac.request(rendersvslice, z0, r, s)
     else:
         rendersvslice(z0, r, s)    
             
-    
 def rendersubvol(z0, r, s):
     if r is None:
         sv = ri.subvolume(z0, nz)
@@ -160,5 +162,10 @@ def rendersubvol(z0, r, s):
         
 if z0 is None:
     for z0 in range(4,9500,200):
-        
+        rendersubvol(z0, None, None)
+else:
+    rendersubvol(z0, r, s)
+       
+if s is None:
+   fac.shutdown()
 
