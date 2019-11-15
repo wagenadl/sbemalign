@@ -18,6 +18,8 @@ import aligndb
 import factory
 import numpy as np
 import matchpointsq5 as mp5
+import scipy.sparse
+import scipy.sparse.linalg
 
 db = aligndb.DB()
 ri = db.runinfo()
