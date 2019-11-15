@@ -411,7 +411,7 @@ def elasticmatrix(mpp, idx, ap, ax):
     # Finally, add E_elast
     Q = 4
     def distfoo(dist2):
-        D0 = 100**2 # Anything within 100 px should be taken very seriously
+        D0 = 20**2 # Anything within 100 px should be taken very seriously
         return 1/(dist2/D0 + 1)
     for mp in mpp:
         rms = (mp.r1, mp.m1, mp.s1)
