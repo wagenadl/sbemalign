@@ -15,19 +15,25 @@ def getPerspective(xmodel, ymodel, ximage, yimage):
     return mdl2img
 
 def applyPerspective(mdl2img, xmodel, ymodel):
+    '''APPLYPERSPECTIVE - Apply perspective transform to set of points
+    ximage, yimage = APPLYPERSPECTIVE(T, xmodel, ymodel) applies 
+    the perspective transform T (probably obtained with GETPERSPECTIVE)
+    to the points specified by (xmodel, ymodel). This function is untested.'''
     xymodel = np.array([np.stack((xmodel,ymodel), 1)])
-    xyimage = cv2.perspectiveTransform(xymodel, img2mdl)
+    xyimage = cv2.perspectiveTransform(xymodel, mdl2img)
     return (xyimage[0,:,0], xyimage[0,:,1])
 
 def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     '''WARPPERSPECTIVE - Copy an image to model space
-    mdl, x0, y0 = WARPPERSPECTIVE(img, mdl2img) fills a portion of model
-    space that fully covers the source IMG based on the perspective
-    transform MDL2IMG. It returns the resulting image (MDL) as well as
-    the coordinates (X0, Y0) where the top-left corner of that image
+    mdl, x0, y0 = WARPPERSPECTIVE(img, xmodel, ymodel, ximage, yimage)
+    fills a portion of model space that fully covers the source IMG based 
+    on the perspective transform implied by the four point pairs in
+    (xmodel, ymodel, ximage, yimage). It returns the resulting image (MDL)
+    as well as the coordinates (X0, Y0) where the top-left corner of that image
     should live in model space. (X0, Y0) are guaranteed to be integers.
     Pixels outside of the defined region are set to black (0).
-    Returns a None image on failure to warp the perspective'''
+    Returns a None image on failure to warp the perspective.
+    Under most circumstances, WARPPERSPECTIVEBOXED is more useful.'''
     Y,X = img.shape
     imgcorners = np.array([[[0,0], [X,0], [0,Y], [X,Y]]], dtype='float32')
     img2mdl = getPerspective(ximage, yimage, xmodel, ymodel)
@@ -50,11 +56,13 @@ def warpPerspective(img, xmodel,ymodel,ximage,yimage):
         return (None, x0, y0)
     return (mdl, x0, y0)
 
-def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
+def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp=None):
     '''QUADTOIMAGEBOX - Find rectangle in image needed to cover model quad
     x0,y0,x1,y1 = QUADTOIMAGEBOX(xmodel, ymodel, mdl2img) finds the (integer)
     edges of a bounding rectangle that fully covers the quadrilateral 
-    specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.'''
+    specified by XMODEL and YMODEL given the transformation matrix MDL2IMG.
+    If optional fourth argument SHP=(height,width) is given, the rectangle 
+    is clipped to lie within 0 ≤ x ≤ width and 0 ≤ y ≤ height.'''
     mdlcorners = np.reshape(np.stack((xmdlbox, ymdlbox), 1), (1, 4, 2))
     imgcorners = cv2.perspectiveTransform(mdlcorners.astype(np.float32), mdl2img)
     #print('quad', mdlcorners)
@@ -63,25 +71,26 @@ def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp):
     x1 = int(np.max(imgcorners[:,:,0])+1+1)
     y0 = int(np.min(imgcorners[:,:,1])-1)
     y1 = int(np.max(imgcorners[:,:,1])+1+1)
-    if x0<0:
-        x0 = 0
-    if y0<0:
-        y0 = 0
-    if y1>=shp[0]:
-        y1 = shp[0]
-    if x1>=shp[1]:
-        x1 = shp[1]
+    if shp is not None:
+        if x0<0:
+            x0 = 0
+        if y0<0:
+            y0 = 0
+        if y1>=shp[0]:
+            y1 = shp[0]
+        if x1>=shp[1]:
+            x1 = shp[1]
     return (x0, y0, x1, y1)
 
-def roundedquad(xx, yy):
+def _roundedquad(xx, yy):
     # xx,yy must be presented in order tl, tr, bl, br
     # results are presented in order tl, tr, br, bl
     return (np.array([int(xx[0]), int(xx[1]+1), int(xx[3]+1), int(xx[2])]),
             np.array([int(yy[0]), int(yy[1]), int(yy[3]+1), int(yy[2])+1]))
 
-def createClipMask(xmodel, ymodel, x0,y0, w,h):
+def _createClipMask(xmodel, ymodel, x0,y0, w,h):
     # Box must be tl, tr, bl, br
-    xxx,yyy = roundedquad(xmodel, ymodel)
+    xxx,yyy = _roundedquad(xmodel, ymodel)
     msk = np.zeros((h,w), dtype=np.uint8)
     pts = np.stack((xxx - x0, yyy - y0), 1)
     cv2.fillPoly(msk, np.array([pts]), color=255)
@@ -89,6 +98,18 @@ def createClipMask(xmodel, ymodel, x0,y0, w,h):
 
 def warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
                          xmodel, ymodel, ximage, yimage):
+    '''WARPPERSPECTIVEBOXED - Fill a box in model space with pixels from source
+    warp, mask, xl, yt = WARPPERSPECTIVEBOXED(source, xbox, ybox,
+                                              xmodel, ymodel, xsource, ysource)
+    uses (xbox, ybox) as the top-left, top-right, bottom-left, bottom-right
+    corners of a quadrilateral in model space. It projects that quad to source
+    space using the perspective transformation implied by the four point pairs
+    specified by (xmodel, ymodel, ximage, yimage). It then finds a rectangle
+    in model space that fully covers the quadrilateral and returns both
+    warped pixels from the source and a mask that defines the quadrilateral.
+    XL and YT indicate where in model space the WARP and MASK should be placed.
+    That placement can be performed with COPYWITHMASK, which see.'''
+
     #print('warpboxed box', xmdlbox, ymdlbox)
     #print('warpboxed mod', xmodel, ymodel)
     #print('warpboxed img', ximage, yimage)
@@ -108,10 +129,16 @@ def warpPerspectiveBoxed(img, xmdlbox, ymdlbox,
         print('yimage', yimage)
         raise Exception('Failed to warp')
     h, w = mdlimg.shape
-    msk = createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
+    msk = _createClipMask(xmdlbox, ymdlbox, mx0, my0, w, h)
     return mdlimg, msk, mx0, my0
 
 def copyWithMask(mdl, img, msk, x0, y0):
+    '''COPYWITHMASK - Copy a masked image onto a larger image
+    COPYWITHMASK(bigimg, img, msk, x0, y0) copies pixels in IMG where MSK
+    is 255 over corresponding pixels in BIGIMG, shifted over by X0, Y0.
+    Pixels in MSK should be either 0 or 255; nothing in between. It is OK
+    if the shifted IMG doesn't quite fit inside MDL. Appropriate clipping is 
+    applied. '''
     if mdl.dtype != np.uint8:
         raise Exception('model must be uint8')
     if img.dtype != np.uint8:
@@ -185,7 +212,7 @@ if __name__=='__main__':
     
     
     qp.figure('/tmp/s3')
-    msk = createClipMask(xmodel, ymodel, x0,y0, X,Y)
+    msk = _createClipMask(xmodel, ymodel, x0,y0, X,Y)
     qp.imsc(msk, xx=np.arange(X), yy=np.arange(Y))
     
     dst = np.zeros((Y,X), dtype='uint8') + 128

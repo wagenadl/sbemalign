@@ -402,16 +402,16 @@ def elasticmatrix(mpp, idx, ap, ax):
             p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
             pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
             Dx = mp.xp(ax)[n] - mp.x(ax)[n]
-        A[p,p] += w
-        A[pp,pp] += w
-        A[p,pp] -= w
-        A[pp,p] -= w
-        b[p] += w*Dx
-        b[pp] -= w*Dx
+            A[p,p] += w
+            A[pp,pp] += w
+            A[p,pp] -= w
+            A[pp,p] -= w
+            b[p] += w*Dx
+            b[pp] -= w*Dx
     # Finally, add E_elast
     Q = 4
     def distfoo(dist2):
-        D0 = 20**2 # Anything within 100 px should be taken very seriously
+        D0 = 50**2 # Anything within 100 px should be taken very seriously
         return 1/(dist2/D0 + 1)
     for mp in mpp:
         rms = (mp.r1, mp.m1, mp.s1)

@@ -6,7 +6,7 @@
 
 monttbl = 'solveq5mont'
 rigidtbl = 'solveq5rigidtile'
-outtbl = 'solveq5softelastic'
+outtbl = 'solveq5elastic'
 nz = 200
 
 IX = IY = 5

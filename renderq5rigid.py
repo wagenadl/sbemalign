@@ -60,15 +60,16 @@ def renderslice(z0, r, s):
         for row in range(R-1):
             yjoin[row+1] = int((yyb[row] + yyt[row+1])/2 + .5)
         for row in range(R):
-            print(f'  Loading fullq5img {r} {row} {s}')
-            im1 = rawimage.fullq5img(r, row, s)
+            m = row
+            print(f'  Loading fullq5img {r} {m} {s}')
+            im1 = rawimage.fullq5img(r, m, s)
             yt = yjoin[row] # in model coordinates
             yb = yjoin[row+1]
-            xl = int(xxl[row]+1)
+            xl = int(xxl[m]+1)
             xr = xl + X - 2
-            yt1 = yjoin[row] - yyt[row] # in tile coordinates
+            yt1 = yjoin[row] - yyt[m] # in tile coordinates
             yb1 = yt1 + yb-yt
-            xl1 = xl - xxl[row]
+            xl1 = xl - xxl[m]
             xr1 = xl1 + xr-xl
             cen = ((xl1+xr1)/2, (yt1+yb1)/2)
             siz = (xr-xl, yb-yt)
@@ -85,6 +86,7 @@ def renderslice(z0, r, s):
         for col in range(C):
             for row in range(R):
                 m = col + C*row
+                print(f'  Loading fullq5img {r} {m} {s}')
                 im1 = rawimage.fullq5img(r, m, s)
                 if row==0:
                     yt = int(yyt[m]+1)
