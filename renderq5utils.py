@@ -218,7 +218,7 @@ def _interpolatedshift(z0, r, m, s, x, y, sc):
     between the k-th measuring point and the point (x, y), and Δ₀ is a 
     constant.'''
     # Let's first do dx
-    Delta0 = 500
+    Delta0 = 600
     Deltaxk = sc[0] - x
     Deltayk = sc[1] - y
     Deltak2 = (Deltaxk)**2 + (Deltayk)**2
@@ -277,16 +277,12 @@ def interpolatedshifts(r, m, s, xx, yy):
 
 if __name__=='__main__':
     import pyqplot as qp
-    r = 1
-    m = 0
-    s = 100
+    r = 5
+    m = 5
+    s = 300
     
     zz0, ww = whence(ri.z(r, s))
     z0 = zz0[0]
-    
-    xx, yy = rendergrid(r, m, s)
-    xxx = np.repeat(np.reshape(xx,(1,6)), 6, 0)
-    yyy = np.repeat(np.reshape(yy,(6,1)), 6, 1)
     x, y, dx, dy = shiftcollection(z0, r, m, s)
     qp.figure('/tmp/s1', 10, 10)
     N = len(x)
@@ -296,4 +292,29 @@ if __name__=='__main__':
     qp.pen('k', 1)
     for n in range(N):
         qp.plot([x[n], x[n]+F*dx[n]], -np.array([y[n], y[n]+F*dy[n]]))
+
+    if len(zz0)>1:
+        z0 = zz0[1]
+        x, y, dx, dy = shiftcollection(z0, r, m, s)
+        N = len(x)
+        qp.pen('777')
+        qp.marker('o')
+        qp.mark(x, -y)
+        F = 500
+        qp.pen(width=1)
+        for n in range(N):
+            qp.plot([x[n], x[n]+F*dx[n]], -np.array([y[n], y[n]+F*dy[n]]))
+        
+    xx, yy = rendergrid(r, m, s)
+    xxx = np.repeat(np.reshape(xx,(1,6)), 6, 0) 
+    yyy = np.repeat(np.reshape(yy,(6,1)), 6, 1) 
+    dx, dy = interpolatedshifts(r, m, s, xxx, yyy)
+    qp.pen('900')
+    qp.mark(xxx, -yyy)
+    for n in range(xxx.size):
+            qp.plot([xxx.flat[n], xxx.flat[n]+F*dx.flat[n]],
+                    -np.array([yyy.flat[n], yyy.flat[n]+F*dy.flat[n]]))
+
+    
+    
     qp.shrink(1,1)
