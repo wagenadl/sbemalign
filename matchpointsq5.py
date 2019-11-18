@@ -394,14 +394,15 @@ def elasticmatrix(mpp, idx, ap, ax):
     j = 0
     # Next, add E_point
     for mp in mpp:
-        if mp.s1==mp.s2:
-            w = 1
+        if mp.s1==mp.s2 and mp.r1==mp.r2:
+            w = 10
         else:
-            w = .25
+            w = 1
         for n in range(len(mp.xx1)):
             p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
             pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
             Dx = mp.xp(ax)[n] - mp.x(ax)[n]
+            #print(f'point {mp.r1},{mp.m1},{mp.s1}:{mp.r2},{mp.m2},{mp.s2} {mp.xx1[n]},{mp.yy1[n]} [{ax}]: {Dx}') 
             A[p,p] += w
             A[pp,pp] += w
             A[p,pp] -= w
@@ -411,7 +412,7 @@ def elasticmatrix(mpp, idx, ap, ax):
     # Finally, add E_elast
     Q = 4
     def distfoo(dist2):
-        D0 = 50**2 # Anything within 100 px should be taken very seriously
+        D0 = 400**2 # Anything within sqrt(D0) px should be taken very seriously
         return 1/(dist2/D0 + 1)
     for mp in mpp:
         rms = (mp.r1, mp.m1, mp.s1)
@@ -419,6 +420,7 @@ def elasticmatrix(mpp, idx, ap, ax):
         yy = ap[rms][1]
         for n in range(len(mp.xx1)):
             k = mp.kk1[n]
+            #print('TEST', mp, n, k, xx[k], mp.xx1[n])
             dx = xx[k] - xx
             dy = yy[k] - yy
             dst = dx**2 + dy**2
@@ -438,6 +440,7 @@ def elasticmatrix(mpp, idx, ap, ax):
                 A[pp,pp] += w
                 A[p,pp] -= w
                 A[pp,p] -= w
+                #print(f'elast {mp.r1},{mp.m1},{mp.s1}:{mp.r2},{mp.m2},{mp.s2} {mp.xx1[n]},{mp.yy1[n]}+{dx[kstar]},{dy[kstar]} [{ax}]: {w}') 
 
         rms = (mp.r2, mp.m2, mp.s2)
         xx = ap[rms][0]

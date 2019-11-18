@@ -185,22 +185,23 @@ def renderlimits(r, m, s):
 
 def rendergrid(r, m, s):
     '''RENDERGRID - Return grid points in global space for rendering a tile
-    xx, yy = RENDERGRID(r, m, s) returns a 6-vector of x-coordinates and
-    a 6-vector of y-coordinates in global space that mark a grid and bbox
+    xx, yy = RENDERGRID(r, m, s) returns a vector of x-coordinates and
+    a vector of y-coordinates in global space that mark a grid and bbox
     of space to be filled by the given tile.'''
     lx, ty, rx, by = renderlimits(r, m, s)
     xrig, yrig, ww = rigidtileposition(r, m, s)
     xrig = int(np.round(np.sum(xrig*ww))) # we know that ww sums to 1
     yrig = int(np.round(np.sum(yrig*ww)))
-    xx = np.zeros(6, dtype=int)
-    yy = np.zeros(6, dtype=int)
+    N = 7
+    xx = np.zeros(N, dtype=int)
+    yy = np.zeros(N, dtype=int)
     xx[0] = lx
     xx[-1] = rx
     yy[0] = ty
     yy[-1] = by
-    for n in range(1,5):
-        xx[n] = xrig + n * (X//5)
-        yy[n] = yrig + n * (X//5)
+    for n in range(N-2):
+        xx[n+1] = xrig + (n+.5) * (X//5)
+        yy[n+1] = yrig + (n+.5) * (X//5)
     return xx, yy
 
 def _interpolatedshift(z0, r, m, s, x, y, sc):
@@ -218,7 +219,7 @@ def _interpolatedshift(z0, r, m, s, x, y, sc):
     between the k-th measuring point and the point (x, y), and Δ₀ is a 
     constant.'''
     # Let's first do dx
-    Delta0 = 600
+    Delta0 = 50
     Deltaxk = sc[0] - x
     Deltayk = sc[1] - y
     Deltak2 = (Deltaxk)**2 + (Deltayk)**2
@@ -238,16 +239,18 @@ def _interpolatedshift(z0, r, m, s, x, y, sc):
     M[2,1] = np.sum(wk*Deltaxk*Deltayk)
     M[2,2] = np.sum(wk*Deltayk**2)
     B = np.zeros(3)
-    B[0] = np.sum(sc[2])
-    B[1] = np.sum(sc[2]*Deltaxk)
-    B[2] = np.sum(sc[2]*Deltayk)
+    B[0] = np.sum(wk*sc[2])
+    B[1] = np.sum(wk*sc[2]*Deltaxk)
+    B[2] = np.sum(wk*sc[2]*Deltayk)
     abc = np.linalg.solve(M, B)
+    #print(abc)
     dx = abc[0]
     # The equation for dy is exactly the same, except that we need dy_k.
-    B[0] = np.sum(sc[3])
-    B[1] = np.sum(sc[3]*Deltaxk)
-    B[2] = np.sum(sc[3]*Deltayk)
+    B[0] = np.sum(wk*sc[3])
+    B[1] = np.sum(wk*sc[3]*Deltaxk)
+    B[2] = np.sum(wk*sc[3]*Deltayk)
     abc = np.linalg.solve(M, B)
+    #print(abc)
     dy = abc[0]
     return dx, dy
     
@@ -269,6 +272,7 @@ def interpolatedshifts(r, m, s, xx, yy):
         ddy = 0
         for n in range(N):
             dx1, dy1 = _interpolatedshift(zz0[n], r, m, s, x, y, scc[n])
+            #print(dy1, ww[n])
             ddx += ww[n] * dx1
             ddy += ww[n] * dy1
         dx.flat[k] = ddx
@@ -277,9 +281,9 @@ def interpolatedshifts(r, m, s, xx, yy):
 
 if __name__=='__main__':
     import pyqplot as qp
-    r = 5
-    m = 5
-    s = 300
+    r = 3
+    m = 2
+    s = 50
     
     zz0, ww = whence(ri.z(r, s))
     z0 = zz0[0]
@@ -306,15 +310,20 @@ if __name__=='__main__':
             qp.plot([x[n], x[n]+F*dx[n]], -np.array([y[n], y[n]+F*dy[n]]))
         
     xx, yy = rendergrid(r, m, s)
-    xxx = np.repeat(np.reshape(xx,(1,6)), 6, 0) 
-    yyy = np.repeat(np.reshape(yy,(6,1)), 6, 1) 
+    N = len(xx)
+    xxx = np.repeat(np.reshape(xx,(1,N)), N, 0) 
+    yyy = np.repeat(np.reshape(yy,(N,1)), N, 1) 
     dx, dy = interpolatedshifts(r, m, s, xxx, yyy)
-    qp.pen('900')
+    qp.pen('900', 1)
     qp.mark(xxx, -yyy)
     for n in range(xxx.size):
             qp.plot([xxx.flat[n], xxx.flat[n]+F*dx.flat[n]],
                     -np.array([yyy.flat[n], yyy.flat[n]+F*dy.flat[n]]))
 
-    
-    
+
+    '''
+    qp.pen('k', 0)
+    qp.xaxis(y=np.min(-yyy)-50, lim=[np.min(xxx), np.max(xxx)])
+    qp.yaxis(x=np.min(xxx)-50, lim=[np.min(-yyy), np.max(-yyy)])
+    '''
     qp.shrink(1,1)
