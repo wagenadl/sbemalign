@@ -33,13 +33,15 @@ def createtable():
 
 def subvol_mont(sv):
     mpp = []
-    first = True
-    for rl in sv:
-        if first:
-            first = False
-        else:
+    N = len(sv)
+    for n in range(N):
+        rl = sv[n]
+        if n>0:
             for m in range(ri.nmontages(rl.r)):
-                mpp += mp5.MatchPoints.trans(rl.r, m)
+                mpp += mp5.MatchPoints.backtrans(rl.r, m)
+        if n<N-1:
+            for m in range(ri.nmontages(rl.r)):
+                mpp += mp5.MatchPoints.forwardtrans(rl.r, m)
         C = ri.ncolumns(rl.r)
         R = ri.nrows(rl.r)
         for c in range(C):

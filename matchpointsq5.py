@@ -132,12 +132,17 @@ class MatchPoints:
             mp.s1 = mp.s2 = None
             mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(snr>dthr, X1,Y1,X2,Y2)
             return mp
-        
-    def trans(r2, m2, thr=None, perslice=False):
+    def forwardtrans(r1, m1, thr=None, perslice=False):
+        # Implicitly, r2=r1+1, s2=0, s1=S(r1)-1.
+        raise Exception("NYI")
+    def backtrans(r2, m2, thr=None, perslice=False):
         # Implicitly, r1=r2-1, s2=0, s1=S(r1)-1.
         # We return a list of MatchPoints, one for each existing m1.
         # If perslice is True, s1 and s2 are stored in the MatchPoints,
         # otherwise, None.
+        # SHOULD GRAB ACTUAL s1 and s2.
+        # Can share code with fwd.
+        raise Exception("Not yet correct")        
         (m1, x2,y2, x1,y1, snr) = db.vsel(f'''select
         m2,
         (ix+0.5)*{X}-dx/2-dxb/2,
@@ -146,7 +151,7 @@ class MatchPoints:
         y+dy/2+dyb/2,
         snrb
         from {transtbl}
-        where r={r2} and m={m2}''')
+        where r={r2} and m={m2} and r2<{r2}''')
         if thr is None:
             thr = dynamicthreshold(snr)
         keep = snr>thr
