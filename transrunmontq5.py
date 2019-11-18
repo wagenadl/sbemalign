@@ -29,10 +29,13 @@ def maketable():
     db.exe(f'''create table if not exists {outtbl} (
     r integer,
     m integer,
+    s integer,
     ix integer,
     iy integer,
 
+    r2 integer,
     m2 integer,
+    s2 integer,
     x float,
     y float,
 
@@ -48,18 +51,19 @@ def maketable():
     syb float,
     snrb float )''')
 
-def transrunmont(r, m, ix, iy):
-    print(f'Working on r{r} m{m} ix{ix},iy{iy}')
-    img = rawimage.partialq5img(r, m, 0, ix, iy)
+def transrunmont(r, m, s, ix, iy, r1, s1):
+    # s must be zero or last, s1 must be last or zero r1 must be r +- 1
+    print(f'Working on r{r} m{m} s{s} ix{ix},iy{iy} to r{r1} s{s1}')
+    img = rawimage.partialq5img(r, m, s, ix, iy)
     x0,y0 = db.sel(f'''select x,y from {roughtbl}
-    where r={r} and m={m} and s=0''')[0]
-    s1 = ri.nslices(r-1) - 1
-    if r-1==35:
-        s1 -= 1
+    where r={r} and m={m} and s={s}''')[0]
     mm1,xx1,yy1 = db.vsel(f'''select m,x,y from {roughtbl} 
-    where r={r-1} and s={s1}
+    where r={r1} and s={s1}
     order by m''')
-    dx,dy = db.sel(f'select dx+dxb, dy+dyb from {intbl} where r2={r}')[0]
+    if r1<r:
+        dx,dy = db.sel(f'select dx+dxb, dy+dyb from {intbl} where r2={r}')[0]
+    else:
+        dx,dy = db.sel(f'select -dx-dxb, -dy-dyb from {intbl} where r2={r1}')[0]
     dx *= inq/outq
     dy *= inq/outq
 
@@ -86,10 +90,7 @@ def transrunmont(r, m, ix, iy):
         iy1=1
     elif iy1>=5:
         iy1=4
-    s = ri.nslices(r-1)-1
-    if r-1 == 35:
-      s -= 1
-    img1 = rawimage.q5subimg2x2(r-1, m1, s, ix1, iy1)
+    img1 = rawimage.q5subimg2x2(r1, m1, s1, ix1, iy1)
 
     # Position in second image that should match center of first
     x1croi = x1c - (ix1-1)*X
@@ -98,13 +99,13 @@ def transrunmont(r, m, ix, iy):
     if x1croi<0 or x1croi>2*X or y1croi<0 or y1croi>2*Y:
         # Have nothing to connect to
         db.exe(f'''insert into {outtbl}
-            (r, m, ix, iy,
-            m2, x, y,
+            (r, m, s, ix, iy,
+            r2, m2, s2, x, y,
             dx, dy, sx, sy, snr,
             dxb, dyb, sxb, syb, snrb)
             values
-            ({r}, {m}, {ix}, {iy},
-            {m1}, {x1c}, {y1c},
+            ({r}, {m}, {s}, {ix}, {iy},
+            {r1}, {m1}, {s1}, {x1c}, {y1c},
             0,0,0,0,0,
             0,0,0,0,0)''')
         return
@@ -163,13 +164,13 @@ def transrunmont(r, m, ix, iy):
             dxb, dyb, sxb, syb, snrb = dxc, dyc, sxc, syc, snrc
 
     db.exe(f'''insert into {outtbl}
-    (r, m, ix, iy,
-    m2, x, y,
+    (r, m, s, ix, iy,
+    r2, m2, s2, x, y,
     dx, dy, sx, sy, snr,
     dxb, dyb, sxb, syb, snrb)
     values
-    ({r}, {m}, {ix}, {iy},
-    {m1}, {x1c}, {y1c},
+    ({r}, {m}, {s}, {ix}, {iy},
+    {r1}, {m1}, {s1}, {x1c}, {y1c},
     {dx}, {dy}, {sx}, {sy}, {snr}, 
     {dxb},{dyb},{sxb},{syb},{snrb})''')
 
@@ -177,21 +178,35 @@ def transrunmany(r, m):
     for ix in range(5):
         for iy in range(5):
             cnt = db.sel(f'''select count(*) from {outtbl}
-            where r={r} and m={m} and ix={ix} and iy={iy}''')[0][0]
-            if cnt==0:
-                transrunmont(r, m, ix, iy)
-
+            where r={r} and m={m} and r2<{r} and ix={ix} and iy={iy}''')[0][0]
+            if r>1 and cnt==0:
+                s = 0
+                r1 = r-1
+                s1 = ri.nslices(r1)-1
+                if r1==35:
+                    s1 -= 1
+                transrunmont(r, m, s, ix, iy, r1, s1)
+            cnt = db.sel(f'''select count(*) from {outtbl}
+            where r={r} and m={m} and r2>{r} and ix={ix} and iy={iy}''')[0][0]
+            if r<ri.nruns() and cnt==0:
+                r1 = r+1
+                s1 = 0
+                s = ri.nslices(r)-1
+                if r==35:
+                    s -= 1
+                transrunmont(r, m, s, ix, iy, r1, s1)
+            
 maketable()
                 
 fac = factory.Factory(nthreads)
-for r0 in range(1, ri.nruns()):
+for r0 in range(0, ri.nruns()):
     r = r0+1
     cnt = db.sel(f'select count(*) from {outtbl} where r={r}')[0][0]
-    if cnt<ri.nmontages(r)*IX*IY:
+    if cnt<ri.nmontages(r)*IX*IY*2:
         for m in range(ri.nmontages(r)):
             cnt = db.sel(f'''select count(*) from {outtbl}
             where r={r} and m={m}''')[0][0]
-            if cnt < IX*IY:
+            if cnt < IX*IY*2:
                 fac.request(transrunmany, r, m)
 fac.shutdown()
 
