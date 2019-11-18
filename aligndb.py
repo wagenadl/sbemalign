@@ -100,6 +100,9 @@ class DB:
             return self.MM[r]
         def z0(self, r):
             return self.zz0[r]
+        def z(self, r, s):
+            z0 = self.zz0[r]
+            return z0 + s
         def ncolumns(self, r):
             if self.MM[r]<=3 or r>=51:
                 return 1

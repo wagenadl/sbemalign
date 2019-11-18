@@ -220,10 +220,10 @@ class MatchPoints:
             return []
         (s, x2,y2, x1,y1, snr) = db.vsel(f'''select
         s,
-        (ix+0.5)*{X}+x-dx/2-dxb/2,
-        (iy+0.5)*{Y}+y-dy/2-dyb/2,
-        (ix+0.5)*{X}+x+dx/2+dxb/2,
-        (iy+0.5)*{Y}+y+dy/2+dyb/2,
+        ix*{X}+x-dx/2-dxb/2,
+        iy*{Y}+y-dy/2-dyb/2,
+        ix*{X}+x+dx/2+dxb/2,
+        iy*{Y}+y+dy/2+dyb/2,
         snrb
         from {edgetbl}
         where r={r} and m={m} and s>{s0} and s<{s1}''')
