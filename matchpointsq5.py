@@ -193,8 +193,8 @@ class MatchPoints:
             mp.r2 = r2
             mp.m2 = m
             if perslice:
-                mp.s1 = s1
-                mp.s2 = s2
+                mp.s1 = s1[0]
+                mp.s2 = s2[0]
             else:
                 mp.s1 = mp.s2 = None
             mp.xx1 = x1[m2==m]
