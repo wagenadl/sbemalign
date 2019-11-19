@@ -215,13 +215,13 @@ class MatchPoints:
                 for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
                     fwd[(m1, mp.m2)] = mp
             except Exception as e:
-                print(f'WARNING: Failed to find any points>{thr} in trans R{r1}M{r1} : R{r2}: ', e)
+                print(f'WARNING: Failed to find any points>{thr} in trans R{r1}M{m1} : R{r2}: ', e)
         for m2 in range(ri.nmontages(r2)):
             try:
                 for mp in MatchPoints.backtrans(r2, m2, thr, perslice):
                     bck[(mp.m1, m2)] = mp
             except Exception as e:
-                print(f'WARNING: Failed to find any points>{thr} in trans R{r2}M{r2} : R{r1}: ', e)
+                print(f'WARNING: Failed to find any points>{thr} in trans R{r2}M{m2} : R{r1}: ', e)
         mpp = []
         for mm, mp in fwd.items():
             if mm in bck:
@@ -358,9 +358,10 @@ def allpoints(mpp):
         if rms not in res:
             res[rms] = [np.zeros(0), np.zeros(0)]
         if len(mp.kk1)==0:
-            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}')
-            continue
-        K = np.max(mp.kk1)+1
+            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}  #1')
+            K = 0
+        else:
+            K = np.max(mp.kk1)+1
         if res[rms][0].size < K:
             res[rms][0].resize(K)
             res[rms][1].resize(K)
@@ -371,6 +372,11 @@ def allpoints(mpp):
         rms = mp.r2, mp.m2, mp.s2
         if rms not in res:
             res[rms] = [np.zeros(0), np.zeros(0)]
+        if len(mp.kk2)==0:
+            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}  #2')
+            K = 0
+        else:
+            K = np.max(mp.kk2)+1
         K = np.max(mp.kk2)+1
         if res[rms][0].size < K:
             res[rms][0].resize(K)

@@ -124,7 +124,7 @@ fac = factory.Factory(nthreads)
 R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
 
-for z0 in range(4, Z, nz//2):
+for z0 in range(4, Z-nz//2, nz//2):
     fac.request(perhapsoptisub, z0)
     
 fac.shutdown()
