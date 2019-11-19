@@ -56,6 +56,18 @@ def warpPerspective(img, xmodel,ymodel,ximage,yimage):
         return (None, x0, y0)
     return (mdl, x0, y0)
 
+def warpToRectangle(dst, xywh, src, xmodel, ymodel, ximage, yimage):
+    '''WARPTORECTANGLE - Override pixels in image with warped pixels from other
+    WARPTORECTANGLE(dst, xywh, src, xdst, ydst, xsrc, ysrc) calculates
+    a perspective transform based on four point pairs in XDST, YDST, XSRC, YSRC,
+    and uses it to render relevant pixels from a SRC image over a rectangle
+    defined by XYWH in a DST image.'''
+    x, y, w, h = xywh
+    dstbox = dst[y:y+h, x:x+w]
+    dstbox2src = getPerspective(xmodel - x, ymodel - y, ximage, yimage)
+    cv2.warpPerspective(src, dstbox2src, (w,h), dst=dstbox,
+                        flags=cv2.WARP_INVERSE_MAP)
+
 def quadToImageBox(xmdlbox, ymdlbox, mdl2img, shp=None):
     '''QUADTOIMAGEBOX - Find rectangle in image needed to cover model quad
     x0,y0,x1,y1 = QUADTOIMAGEBOX(xmodel, ymodel, mdl2img) finds the (integer)

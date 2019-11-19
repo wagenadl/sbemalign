@@ -58,10 +58,6 @@ def rigidtilepositions(z0, r, s):
     _rtp[zrs] = (xm, ym)
     return xm, ym
 
-def rigidtileposition(z0, r, m, s):
-    rtp = rigidtilepositions(z0, r, s)
-    return rtp[0][m], rtp[1][m]
-
 def shiftcollection(z0, r, m, s):
     '''SHIFTCOLLECTION - Known shifts according to elastic solution
     x, y, dx, dy = SHIFTCOLLECTION(z0, r, m, s) returns all the known 
