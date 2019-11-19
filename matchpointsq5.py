@@ -138,12 +138,20 @@ class MatchPoints:
         R = ri.nrows(r)
         for col in range(C):
             for row in range(R-1):
-                mpp.append(MatchPoints.cross(r, row*C+col, (row+1)*C+col,
-                                             s0, s1, thr, perslice))
+                mp = MatchPoints.cross(r, row*C+col, (row+1)*C+col,
+                                       s0, s1, thr, perslice)
+                if perslice:
+                    mpp += mp
+                else:
+                    mpp.append(mp)
         for col in range(C-1):
             for row in range(R):
-                mpp.append(MatchPoints.cross(r, row*C+col, row*C+col+1,
-                                             s0, s1, thr, perslice))
+                mp = MatchPoints.cross(r, row*C+col, row*C+col+1,
+                                       s0, s1, thr, perslice)
+                if perslice:
+                    mpp += mp
+                else:
+                    mpp.append(mp)
         return mpp
         
     def anytrans(r1, m1, r2, thr=None, perslice=False):
