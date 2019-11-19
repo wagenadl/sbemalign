@@ -452,7 +452,7 @@ def elasticmatrix(mpp, idx, ap, ax):
         if mp.s1==mp.s2 and mp.r1==mp.r2:
             w = 10
         else:
-            w = 1
+            w = 2
         for n in range(len(mp.xx1)):
             p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
             pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]

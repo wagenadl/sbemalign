@@ -47,24 +47,10 @@ def subvol_elastic(sv):
         if first:
             first = False
         else:
-            for m in range(ri.nmontages(rl.r)):
-                mpp += mp5.MatchPoints.trans(rl.r, m,
+            mpp += mp5.MatchPoints.alltrans(rl.r-1, rl.r,
                                              thr=7,
                                              perslice=True)
-        C = ri.ncolumns(rl.r)
-        R = ri.nrows(rl.r)
-        for c in range(C):
-            for r in range(R-1):
-                mpp += mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
-                                             rl.s0, rl.s1,
-                                             thr=7,
-                                             perslice=True)
-        for c in range(C-1):
-            for r in range(R):
-                mpp += mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
-                                             rl.s0, rl.s1,
-                                             thr=7,
-                                             perslice=True)
+        mpp += mp5.MatchPoints.allcross(rl.r, rl.s0, rl.s1, thr=7, perslice=True)
         for m in range(ri.nmontages(rl.r)):
             mpi = mp5.MatchPoints.intra(rl.r, m, rl.s0, rl.s1, thr=7)
             mpe = mp5.MatchPoints.edge(rl.r, m, rl.s0, rl.s1, thr=7)
