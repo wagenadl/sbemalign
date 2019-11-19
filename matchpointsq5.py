@@ -211,11 +211,17 @@ class MatchPoints:
         fwd = {} # keys are (m1,m2)
         bck = {} # keys are (m1,m2) [not the other way around]
         for m1 in range(ri.nmontages(r1)):
-            for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
-                fwd[(m1, mp.m2)] = mp
+            try:
+                for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
+                    fwd[(m1, mp.m2)] = mp
+            except Exception as e:
+                print(f'WARNING: Failed to find any points>{thr} in trans R{r1}M{r1} : R{r2}: ', e)
         for m2 in range(ri.nmontages(r2)):
-            for mp in MatchPoints.backtrans(r2, m2, thr, perslice):
-                bck[(mp.m1, m2)] = mp
+            try:
+                for mp in MatchPoints.backtrans(r2, m2, thr, perslice):
+                    bck[(mp.m1, m2)] = mp
+            except Exception as e:
+                print(f'WARNING: Failed to find any points>{thr} in trans R{r2}M{r2} : R{r1}: ', e)
         mpp = []
         for mm, mp in fwd.items():
             if mm in bck:
@@ -348,12 +354,12 @@ def allpoints(mpp):
     You must call assignK first.'''
     res = {} # map from rms to pairs of vectors
     for mp in mpp:
-        if len(mp.kk1)==0:
-            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}')
-            continue
         rms = mp.r1, mp.m1, mp.s1
         if rms not in res:
             res[rms] = [np.zeros(0), np.zeros(0)]
+        if len(mp.kk1)==0:
+            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}')
+            continue
         K = np.max(mp.kk1)+1
         if res[rms][0].size < K:
             res[rms][0].resize(K)
