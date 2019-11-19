@@ -377,7 +377,6 @@ def allpoints(mpp):
             K = 0
         else:
             K = np.max(mp.kk2)+1
-        K = np.max(mp.kk2)+1
         if res[rms][0].size < K:
             res[rms][0].resize(K)
             res[rms][1].resize(K)
