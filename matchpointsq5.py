@@ -30,9 +30,6 @@ def keepsome(idx, *args):
         res.append(a[idx])
     return res
 
-def fixkey(x):
-    return int(x*1000+.5)
-
 class MatchPoints:
     def __init__(self):
         self.r1 = None
@@ -351,6 +348,9 @@ def allpoints(mpp):
     You must call assignK first.'''
     res = {} # map from rms to pairs of vectors
     for mp in mpp:
+        if len(mp.kk1)==0:
+            print(f'Warning: no points in R{mp.r1} M{mp.m1} S{mp.s1} : R{mp.r2} M{mp.m2} S{mp.s2}')
+            continue
         rms = mp.r1, mp.m1, mp.s1
         if rms not in res:
             res[rms] = [np.zeros(0), np.zeros(0)]
