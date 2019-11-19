@@ -172,15 +172,15 @@ class MatchPoints:
         where r={r1} and m={m1} and r2={r2}''')
         if thr is None:
             thr = dynamicthreshold(snr)
-            keep = snr>thr
-            s1 = s1[keep]
-            s2 = s2[keep]
-            m2 = m2[keep]
-            x1 = x1[keep]
-            y1 = y1[keep]
-            x2 = x2[keep]
-            y2 = y2[keep]
-            snr = snr[keep]
+        keep = snr>thr
+        s1 = s1[keep]
+        s2 = s2[keep]
+        m2 = m2[keep]
+        x1 = x1[keep]
+        y1 = y1[keep]
+        x2 = x2[keep]
+        y2 = y2[keep]
+        snr = snr[keep]
         if m2.size==0:
             msg = f'Trans failed >= {thr} at R{r1}:R{r2} M{m1}:~'
             raise Exception(msg)
