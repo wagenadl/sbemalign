@@ -37,21 +37,8 @@ def subvol_mont(sv):
     for n in range(N):
         rl = sv[n]
         if n>0:
-            for m in range(ri.nmontages(rl.r)):
-                mpp += mp5.MatchPoints.backtrans(rl.r, m)
-        if n<N-1:
-            for m in range(ri.nmontages(rl.r)):
-                mpp += mp5.MatchPoints.forwardtrans(rl.r, m)
-        C = ri.ncolumns(rl.r)
-        R = ri.nrows(rl.r)
-        for c in range(C):
-            for r in range(R-1):
-                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, (r+1)*C+c,
-                                                 rl.s0, rl.s1))
-        for c in range(C-1):
-            for r in range(R):
-                mpp.append(mp5.MatchPoints.cross(rl.r, r*C+c, r*C+c+1,
-                                                 rl.s0, rl.s1))
+            mpp += mp5.MatchPoints.alltrans(rl.r-1, rl.r)
+        mpp += mp5.MatchPoints.allcross(rl.r, rl.s0, rl.s1)
     return mpp
 
 def optisub(z0):

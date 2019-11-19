@@ -122,7 +122,7 @@ class MatchPoints:
             return mpp
         else:
             if thr is None:
-                dthr = dynamicthreshold(SNR)
+                dthr = dynamicthreshold(snr)
             else:
                 dthr = thr
             mp = MatchPoints()
@@ -130,64 +130,106 @@ class MatchPoints:
             mp.m1 = m1
             mp.m2 = m2
             mp.s1 = mp.s2 = None
-            mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(snr>dthr, X1,Y1,X2,Y2)
+            mp.xx1, mp.yy1, mp.xx2, mp.yy2 = keepsome(snr>dthr, x1,y1,x2,y2)
             return mp
-    def forwardtrans(r1, m1, thr=None, perslice=False):
-        # Implicitly, r2=r1+1, s2=0, s1=S(r1)-1.
-        raise Exception("NYI")
-    def backtrans(r2, m2, thr=None, perslice=False):
-        # Implicitly, r1=r2-1, s2=0, s1=S(r1)-1.
-        # We return a list of MatchPoints, one for each existing m1.
+    def allcross(r, s0=0, s1=None, thr=None, perslice=False):
+        mpp = []
+        C = ri.ncolumns(r)
+        R = ri.nrows(r)
+        for col in range(C):
+            for row in range(R-1):
+                mpp.append(MatchPoints.cross(r, row*C+col, (row+1)*C+col,
+                                             s0, s1, thr, perslice))
+        for col in range(C-1):
+            for row in range(R):
+                mpp.append(MatchPoints.cross(r, row*C+col, row*C+col+1,
+                                             s0, s1, thr, perslice))
+        return mpp
+        
+    def anytrans(r1, m1, r2, thr=None, perslice=False):
+        # We return a list of MatchPoints, one for each existing m2.
         # If perslice is True, s1 and s2 are stored in the MatchPoints,
         # otherwise, None.
-        # SHOULD GRAB ACTUAL s1 and s2.
-        # Can share code with fwd.
-        raise Exception("Not yet correct")        
-        (m1, x2,y2, x1,y1, snr) = db.vsel(f'''select
-        m2,
+        # r2 must be r1 ± 1.
+        # "Forward" is when r1>r2.
+        # Note that we are changing our nomenclature here to match the table.
+        (s1,s2,m2, x1,y1, x2,y2, snr) = db.vsel(f'''select
+        s,s2,m2,
         (ix+0.5)*{X}-dx/2-dxb/2,
         (iy+0.5)*{Y}-dy/2-dyb/2,
         x+dx/2+dxb/2,
         y+dy/2+dyb/2,
         snrb
         from {transtbl}
-        where r={r2} and m={m2} and r2<{r2}''')
+        where r={r1} and m={m1} and r2={r2}''')
         if thr is None:
             thr = dynamicthreshold(snr)
-        keep = snr>thr
-        m1 = m1[keep]
-        x1 = x1[keep]
-        y1 = y1[keep]
-        x2 = x2[keep]
-        y2 = y2[keep]
-        snr = snr[keep]
-        if m1.size==0:
-            msg = f'Trans failed >= {thr} at R{r2-1}:R{r2} M~:{m2}'
+            keep = snr>thr
+            s1 = s1[keep]
+            s2 = s2[keep]
+            m2 = m2[keep]
+            x1 = x1[keep]
+            y1 = y1[keep]
+            x2 = x2[keep]
+            y2 = y2[keep]
+            snr = snr[keep]
+        if m2.size==0:
+            msg = f'Trans failed >= {thr} at R{r1}:R{r2} M{m1}:~'
             raise Exception(msg)
-        mm1 = np.unique(m1)
+        mm2 = np.unique(m2)
         mpp = []
-        for m in mm1:
+        for m in mm2:
             mp = MatchPoints()
-            mp.r1 = r2-1
-            mp.m1 = m
+            mp.r1 = r1
+            mp.m1 = m1
             mp.r2 = r2
-            mp.m2 = m2
+            mp.m2 = m
             if perslice:
-                r1 = r2 - 1
-                s1 = ri.nslices(r2-1) - 1
-                if r1==35:
-                    s1 -= 1
                 mp.s1 = s1
-                mp.s2 = 0
+                mp.s2 = s2
             else:
                 mp.s1 = mp.s2 = None
-            mp.xx1 = x1[m1==m]
-            mp.yy1 = y1[m1==m]
-            mp.xx2 = x2[m1==m]
-            mp.yy2 = y2[m1==m]
+            mp.xx1 = x1[m2==m]
+            mp.yy1 = y1[m2==m]
+            mp.xx2 = x2[m2==m]
+            mp.yy2 = y2[m2==m]
             mpp.append(mp)
         return mpp
-    
+    def forwardtrans(r1, m1, thr=None, perslice=False):
+        # Implicitly, r2=r1+1, s2=0, s1=S(r1)-1.
+        return MatchPoints.anytrans(r1, m1, r1+1, thr, perslice)
+    def backtrans(r2, m2, thr=None, perslice=False):
+        return MatchPoints.anytrans(r2, m2, r2-1, thr, perslice)
+    def alltrans(r1, r2, thr=None, perslice=False):
+        if r2 != r1+1:
+            raise Exception('r2 must be r1+1')
+        fwd = {} # keys are (m1,m2)
+        bck = {} # keys are (m1,m2) [not the other way around]
+        for m1 in range(ri.nmontages(r1)):
+            for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
+                fwd[(m1, mp.m2)] = mp
+        for m2 in range(ri.nmontages(r2)):
+            for mp in MatchPoints.backtrans(r2, m2, thr, perslice):
+                bck[(mp.m1, m2)] = mp
+        mpp = []
+        for mm, mp in fwd.items():
+            if mm in bck:
+                mp1 = bck[mm]
+                mp.xx1 = np.concatenate((mp.xx1, mp1.xx2))
+                mp.xx2 = np.concatenate((mp.xx2, mp1.xx1))
+                mp.yy1 = np.concatenate((mp.yy1, mp1.yy2))
+                mp.yy2 = np.concatenate((mp.yy2, mp1.yy1))
+            mpp.append(mp)
+        for mm, mp in bck.items():
+            if mm not in fwd:
+                mp.r1, mp.r2 = mp.r2, mp.r1
+                mp.m1, mp.m2 = mp.m2, mp.m1
+                mp.s1, mp.s2 = mp.s2, mp.s1
+                mp.xx1, mp.xx2 = mp.xx2, mp.xx1
+                mp.yy1, mp.yy2 = mp.yy2, mp.yy1
+                mpp.append(mp)
+        return mpp
+
     def intra(r, m, s0, s1, thr=None):
         # Returns a list of MatchPoints with data from the intra table
         # for each of the slice pairs in [s0, s1).
