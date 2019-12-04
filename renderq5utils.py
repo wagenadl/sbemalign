@@ -134,11 +134,17 @@ def touchlines(r, s):
         touchy = touchy + ww[n]*ty
     return touchx.astype(int), touchy.astype(int)
 
-def rigidtileposition(r, m, s):
+def rigidtileposition(r, m, s, collapse=True):
     '''RIGIDTILEPOSITION - Position for a single tile
-    x, y, w = RIGIDTILEPOSITION(r, m, s) returns global top-left coordinates
-    for the given tile according to each of the subvolumes that it is part of,
-    along with weights for those subvolumes.'''
+    x, y = RIGIDTILEPOSITION(r, m, s) returns global top-left coordinates
+    for the given tile using a weighted average of each of the subvolumes
+    that it is part of.
+    x, y, w = RIGIDTILEPOSITION(r, m, s, collapse=False) returns
+    global top-left coordinates for the given tile according to each
+    of the subvolumes that it is part of, along with weights for those
+    subvolumes.
+
+    '''
     z = ri.z(r, s)
     zz0, ww = whence(z)
     N = len(zz0)
@@ -148,7 +154,12 @@ def rigidtileposition(r, m, s):
         lxx, tyy = rigidtilepositions(zz0[n], r, s)
         x[n] = lxx[m]
         y[n] = tyy[m]
-    return x, y, ww
+    if collapse:
+        x = np.sum(x*ww) / np.sum(ww)    
+        y = np.sum(y*ww) / np.sum(ww)
+        return x, y
+    else:
+        return x, y, ww
 
 def renderlimits(r, m, s):
     '''RENDERLIMITS - Boundaries for rendering of tiles in q5elastic
@@ -157,7 +168,7 @@ def renderlimits(r, m, s):
 
     # Our aim is to find the common area covered by all rigid positionings
     # of the tile.    
-    xx, yy, ww = rigidtileposition(r, m, s)
+    xx, yy, ww = rigidtileposition(r, m, s, collapse=False)
     lx = int(np.ceil(np.max(xx)))
     ty = int(np.ceil(np.max(yy)))
     rx = int(np.floor(np.min(xx))) + X
@@ -185,7 +196,7 @@ def rendergrid(r, m, s):
     a vector of y-coordinates in global space that mark a grid and bbox
     of space to be filled by the given tile.'''
     lx, ty, rx, by = renderlimits(r, m, s)
-    xrig, yrig, ww = rigidtileposition(r, m, s)
+    xrig, yrig, ww = rigidtileposition(r, m, s, collapse=False)
     xrig = int(np.round(np.sum(xrig*ww))) # we know that ww sums to 1
     yrig = int(np.round(np.sum(yrig*ww)))
     N = 7
@@ -253,7 +264,8 @@ def _interpolatedshift(z0, r, m, s, x, y, sc):
 def interpolatedshifts(r, m, s, xx, yy):
     '''INTERPOLATEDSHIFTS - Interpolated shifts at specific points
     dx, dy = INTERPOLATEDSHIFTS(r, m, s, xx, yy) calculates shifts for 
-    the given tile at given points, which are specified in global coords.'''
+    the given tile at given points, which are specified in global coords.
+    This uses a weighted average over subvolumes.'''
     zz0, ww = whence(ri.z(r, s))
     N = len(zz0)
     scc = []
