@@ -5,6 +5,7 @@ import renderq5utils
 import aligndb
 import warp
 import numpy as np
+import cv2
 
 monttbl = 'solveq5mont'
 rigidtbl = 'solveq5rigidtile'
@@ -54,12 +55,13 @@ for m in range(M):
             xr1 = xx[ix+1]
             yt1 = yy[iy]
             yb1 = yy[iy+1]
-            xywh = [xl1, yt1, xr1-xl1, yb1-yt1]
+            xywh = [xl1-xl0, yt1-yt0, xr1-xl1, yb1-yt1]
             xmdl = np.array([xx[ix], xx[ix], xx[ix+1], xx[ix+1]])
             ymdl = np.array([yy[iy], yy[iy+1], yy[iy], yy[iy+1]])
             dx, dy = renderq5utils.interpolatedshifts(r, m, s, xmdl, ymdl)
-            xtile = xmdl - x0 + dx
-            ytile = ymdl - y0 + dy
+            xtile = xmdl - x0 - dx
+            ytile = ymdl - y0 - dy
             warp.warpToRectangle(img, xywh, tiles[m],
-                                 xmdl, ymdl, xtile, ytile)
+                                 xmdl-xl0, ymdl-yt0, xtile, ytile)
             
+cv2.imwrite('/tmp/rms1.jpg', img)

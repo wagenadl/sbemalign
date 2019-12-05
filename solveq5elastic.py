@@ -39,7 +39,8 @@ def createtable():
     dy float )''')
     # x, y are the x_k on p. 1615.
     # dx, dy are the ξ_k on p. 1615.
-    
+    db.exe('create index if not exists sq5e_rms on solveq5elastic (r, m, s)')
+
 def subvol_elastic(sv):
     mpp = []
     first = True

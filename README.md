@@ -55,6 +55,7 @@ Currently meaningful programs and tables
 - transrunmontq5
 - solveq5mont
 - solveq5rigidtile
+- solveq5elastic
 
 Details of database tables
 --------------------------
@@ -62,7 +63,124 @@ Details of database tables
 These are presented here in order of construction hierarchy, toplevel
 tables first.
 
-### warpq5rundone
+### solveq5elastic
+
+Solved elastic shifts inside tiles
+
+#### Members
+
+z0
+: subvolume ID
+r, m, s
+: run-montage-slice for a tile
+x, y
+: coordinates of test point relative to subvolume
+dx, dy
+: shift for that test point
+
+### solveq5rigidtile
+
+Solved rigid positions of tiles in a subvolume.
+
+#### Members
+z0
+: subvolume ID
+r, m, s
+: run-montage-slice for a tile
+x, y
+: position of that tile relative to (r, m) position from solveq5mont
+
+### solveq5mont
+
+Solved positions of montages in a subvolume.
+
+#### Members
+
+z0
+: subvolume ID
+r, m
+: run and montage
+x, y
+: position of topleft corner of the montage relative to the subvolume
+
+
+### transrunmontq5
+
+Relative alignment of subtile centers in one run relative to other run.
+In the end, pixel
+  (X + (ix+.5)*684, Y + (iy+.5)*684) in (r, m, s)
+is matched to
+  (X + x + dx + dxb, Y + y + dy + dyb) in (r2, m2, s2).
+
+#### Members:
+
+r, m, s
+: Primary tile
+ix, iy
+: Subtile position in primary tile
+r2, m2, s2
+: Secondary tile
+x, y
+: Base position in secondary tile
+dx, dy, sx, sy, snr
+: Results of first SWIM
+dxb, dyb, sxb, syb, snrb
+: Results of second SWIM
+
+#### Dependencies:
+
+- solveq5slice
+- interrunq25
+
+### interrunq25
+
+Relative alignment of two runs at scale 1:25. We align the last slice of r1
+and the first slice of r2, which must have been rendered using renderq25slice
+according to the results of solveq5slice. In the end, pixel location
+  (X - dx/2 - dxb/2, Y - dy/2 - dyb/2) in (r1, sfinal)
+matches to
+  (X + dx/2 + dxb/2, Y + dy/2 + dyb/2) in (r2, sfirst).
+Coordinates are stored at 1:25 scale, not at 1:5 scale!
+
+#### Members:
+
+r1, r2
+: The runs involved. Invariant: r1 + 1 = r2
+
+dx, dy, sx, sy, snr
+: Results of first SWIM
+
+dxb, dyb, sxb, syb, snrb
+: Results of second SWIM
+
+#### Dependencies:
+
+- solveq5slice
+- images rendered by renderq25slice
+
+
+### solveq5slice
+
+This optimizes the relative positions of all the tiles in a slice.
+It does not optimize the positions of individual points.
+See E&R p. 1611ff.
+This is used for transrunmontq5 and renderq25slice.
+
+#### Members:
+r, m, s
+: run, montage, slice number
+x, y
+: position of tile relative to slice
+
+#### Constructed by:
+
+solveq5slice.py
+
+#### Dependencies:
+
+- slicealignq5
+
+### warpq5rundone [obsolete]
 
 Simple bookkeeping of which slices have been rendered at Q5 so far.
 
