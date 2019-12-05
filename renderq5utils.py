@@ -58,6 +58,25 @@ def rigidtilepositions(z0, r, s):
     _rtp[zrs] = (xm, ym)
     return xm, ym
 
+def globalbbox():
+    '''GLOBALBBOX - Overall bounding box of imagery
+    x0, y0, x1, y1 = GLOBALBBOX() returns the overall bounding box
+    for all images at Q=5.
+    By definition, x0 = y0 = 0.
+    x1 and y1 are rounded up to integer.'''
+    x0, x1, y0, y1 = db.sel(f'''select min(x), max(x), min(y), max(y)
+    from (select gs.x+mo.x+ri.x as x, gs.y+mo.y+ri.y as y
+    from {globtbl} as gs
+    inner join {monttbl} as mo on gs.z0=mo.z0
+    inner join {rigidtbl} as ri on mo.z0=ri.z0 and mo.r=ri.r and mo.m=ri.m
+    ) as tbl''')[0]
+    x0 -= bbox[0]
+    y0 -= bbox[1]
+    x1 -= bbox[0]
+    y1 -= bbox[1]
+    return (int(np.floor(x0)), int(np.floor(y0)),
+            int(np.ceil(x1)), int(np.ceil(y1)))
+
 def shiftcollection(z0, r, m, s):
     '''SHIFTCOLLECTION - Known shifts according to elastic solution
     x, y, dx, dy = SHIFTCOLLECTION(z0, r, m, s) returns all the known 
