@@ -35,10 +35,10 @@ xr2, yr2 = db.sel(f'''select x,y from solveq5rigidtile
    where r={r} and m={m2} and s={s}''')[0]
 
 xx1, yy1, dx1, dy1 = db.vsel(f'''select x, y, dx, dy from solveq5elastic
-   where r={r} and m={m1} and s={s}''')
+   where r={r} and m={m1} and s={s} and z0={z0}''')
 
 xx2, yy2, dx2, dy2 = db.vsel(f'''select x, y, dx, dy from solveq5elastic
-   where r={r} and m={m2} and s={s}''')
+   where r={r} and m={m2} and s={s} and z0={z0}''')
 
 ii = np.arange(15)
 xx0 = xm1 + ((ii+1)%3 - 1)*(X/5) + (ix1+.7)*X
