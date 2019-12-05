@@ -310,6 +310,18 @@ def combine(mpi, mpe):
         mp.combine(mpe[k])
         mpr.append(mp)
     return mpr
+
+def find(mpp, r1=None, m1=None, s1=None, r2=None, m2=None, s2=None):
+    res = []
+    for mp in mpp:
+        if r1 is None or mp.r1==r1:
+            if m1 is None or mp.m1==m1:
+                if s1 is None or mp.s1==s1:
+                    if r2 is None or mp.r2==r2:
+                        if m2 is None or mp.m2==m2:
+                            if s2 is None or mp.s2==s2:
+                                res.append(mp)
+    return res
     
 def index(mpp):
     # Given a list of MatchPoints objects, construct an index for matrixing
@@ -452,7 +464,7 @@ def matrix(mpp, idx, ax):
     return A, b
 
 def elasticmatrix(mpp, idx, ap, ax):
-    EPSILON = 1e-6
+    EPSILON = 1e-9
     K = len(idx)
     # Fill A with E_stable
     A = scipy.sparse.diags([np.ones(K) * EPSILON], [0], (K,K), "dok")
@@ -461,9 +473,9 @@ def elasticmatrix(mpp, idx, ap, ax):
     # Next, add E_point
     for mp in mpp:
         if mp.s1==mp.s2 and mp.r1==mp.r2:
-            w = 10
+            w = 50
         else:
-            w = 2
+            w = 5
         for n in range(len(mp.xx1)):
             p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
             pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
@@ -478,8 +490,8 @@ def elasticmatrix(mpp, idx, ap, ax):
     # Finally, add E_elast
     Q = 4
     def distfoo(dist2):
-        D0 = 400**2 # Anything within sqrt(D0) px should be taken very seriously
-        return 1/(dist2/D0 + 1)
+        D0 = 684 # Anything within D0 px should be taken very seriously
+        return 1/(dist2/(D0*D0) + .1)
     for mp in mpp:
         rms = (mp.r1, mp.m1, mp.s1)
         xx = ap[rms][0]
@@ -503,9 +515,9 @@ def elasticmatrix(mpp, idx, ap, ax):
                 pstar = idx[(mp.r1, mp.m1, mp.s1, kstar)]
                 w = distfoo(dst[kstar])
                 A[p,p] += w
-                A[pp,pp] += w
-                A[p,pp] -= w
-                A[pp,p] -= w
+                A[pstar,pstar] += w
+                A[p,pstar] -= w
+                A[pstar,p] -= w
                 #print(f'elast {mp.r1},{mp.m1},{mp.s1}:{mp.r2},{mp.m2},{mp.s2} {mp.xx1[n]},{mp.yy1[n]}+{dx[kstar]},{dy[kstar]} [{ax}]: {w}') 
 
         rms = (mp.r2, mp.m2, mp.s2)
@@ -527,8 +539,8 @@ def elasticmatrix(mpp, idx, ap, ax):
                 pstar = idx[(mp.r2, mp.m2, mp.s2, kstar)]
                 w = distfoo(dst[kstar])
                 A[p,p] += w
-                A[pp,pp] += w
-                A[p,pp] -= w
-                A[pp,p] -= w
+                A[pstar,pstar] += w
+                A[p,pstar] -= w
+                A[pstar,p] -= w
     return A, b
     
