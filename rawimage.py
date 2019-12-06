@@ -137,6 +137,22 @@ def iscale(img, n):
         img = img[0:n*Ky,0:n*Kx]
     return cv2.resize(img, (Ky, Kx), interpolation=cv2.INTER_AREA)
 
+def ipad(img, pad=512, padc=0):
+    '''IPAD - Pad an image
+    im = IPAD(img, pad) zero pads an image so that its size is an integral
+    multiple of PAD in either direction. Optional argument PADC specifies
+    an alternate padding color.'''
+    Y, X = img.shape
+    KY = pad * ((Y+pad-1)//pad)
+    KX = pad * ((X+pad-1)//pad)
+    if KY==Y and KX==X:
+        return img
+    res =  np.empty((KY,KX), dtype=img.dtype)
+    res[Y:,:] = padc
+    res[:Y,X:] = padc
+    res[:Y,:X] = img
+    return res
+
 def saveimage(img, ofn, qual=None):
     '''SAVEIMAGE - Save an image to disk
     SAVEIMAGE(img, fn) saves the image to disk.

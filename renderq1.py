@@ -19,6 +19,8 @@ x0, y0, x1, y1 = renderq5utils.globalbbox()
 W = x1
 H = y1
 Q = 5
+TS = 512 # Tile size
+FS = 17100 # Full size
 
 def droptable():
     db.nofail(f'drop table {tbl}')
@@ -31,7 +33,9 @@ def maketable():
 
 def render(z):
     print(f'Rendering z{z}')
-    img = np.zeros((H*Q, W*Q), dtype=np.uint8)
+    X = TS*((W*Q + TS-1) // TS)
+    Y = TS*((H*Q + TS-1) // TS)
+    img = np.zeros((Y,X), dtype=np.uint8)
     r, s = ri.findz(z)
     M = ri.nmontages(r)
     xx0 = []
@@ -39,6 +43,9 @@ def render(z):
     for m in range(M):
         print(f'Loading Z{z} M{m}')
         tile = rawimage.fullq1img(r, m, s)
+        print(f'Replacing 0 by 1 in Z{z} M{m}')
+        tile[tile==0] = 1
+        print(f'Processing Z{z} M{m}')
         xx, yy = renderq5utils.rendergrid(r, m, s)
         IX = len(xx) - 1
         IY = len(yy) - 1
@@ -73,24 +80,25 @@ def render(z):
         os.mkdir(dr)
 
     img1 = img
+    # Find extent actually filled
     x0 = int(np.floor(np.min(xx0)*Q))
     y0 = int(np.floor(np.min(yy0)*Q))
-    x1 = int(np.ceil(np.max(xx0)*Q + 17100))
-    y1 = int(np.ceil(np.max(yy0)*Q + 17100))
+    x1 = int(np.ceil(np.max(xx0)*Q + FS))
+    y1 = int(np.ceil(np.max(yy0)*Q + FS))
     for a in range(9):
         dr1 = dr + f'/A{a}'
         if not os.path.exists(dr1):
             os.mkdir(dr1)
-        x0t = x0 // 512
-        y0t = y0 // 512
-        x1t = x1 // 512
-        y1t = y1 // 512
+        x0t = x0 // TS
+        y0t = y0 // TS
+        x1t = (x1+TS-1) // TS
+        y1t = (y1+TS-1) // TS
         def saveone(x, y): # tile numbers!
             print(f'Saving Z{z} A{a} X{x} Y{y}')
-            xl = x*512
-            xr = xl + 512
-            yt = y*512
-            yb = yt + 512
+            xl = x*TS
+            xr = xl + TS
+            yt = y*TS
+            yb = yt + TS
             img2 = img1[yt:yb, xl:xr]
             print(xl,yt,img2.shape,np.mean(img2))
             if not cv2.imwrite(f'{dr}/A{a}/Y{y}/X{x}.jpg', img2):
@@ -107,7 +115,7 @@ def render(z):
         y0 = y0 // 2
         x1 = (x1 + 1) // 2
         y1 = (y1 + 1) // 2
-        img1 = rawimage.iscale(img1, 2)
+        img1 = rawimage.ipad(rawimage.iscale(img1, 2), TS)
     db.exe(f'insert into {tbl} (z) values ({z})')
 
 def perhapsrender(z):
