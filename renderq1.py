@@ -9,7 +9,7 @@ import os
 import rawimage
 import warp
 
-tbl = 'renderq5q1done'
+tbl = 'renderq1done'
 odir = '/lsi2/dw/170428/q1pyramid'
 
 
@@ -37,7 +37,7 @@ def render(z):
     xx0 = []
     yy0 = []
     for m in range(M):
-        print(f'Rendering Z{z} M{m}')
+        print(f'Loading Z{z} M{m}')
         tile = rawimage.fullq1img(r, m, s)
         xx, yy = renderq5utils.rendergrid(r, m, s)
         IX = len(xx) - 1
@@ -80,10 +80,10 @@ def render(z):
         dr1 = dr + f'/A{a}'
         if not os.path.exists(dr1):
             os.mkdir(dr1)
-        x0t = x0 // 512
-        y0t = y0 // 512
-        x1t = (x1+511) // 512
-        y1t = (y1+511) // 512
+        x0t = int(np.floor(x0)) // 512
+        y0t = int(np.floor(y0)) // 512
+        x1t = (int(np.ceil(x1))+511) // 512
+        y1t = (int(np.ceil(y1))+511) // 512
         def saveone(x, y): # tile numbers!
             print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*512
