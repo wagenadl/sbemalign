@@ -72,25 +72,29 @@ def render(z):
     if not os.path.exists(dr):
         os.mkdir(dr)
 
-    x0 = np.min(xx0)
-    y0 = np.min(yy0)
-    x1 = np.max(xx0) + 17100
-    y1 = np.max(yy0) + 17100
-    for a in range(8):
+    img1 = img
+    x0 = int(np.floor(np.min(xx0)*Q))
+    y0 = int(np.floor(np.min(yy0)*Q))
+    x1 = int(np.ceil(np.max(xx0)*Q + 17100))
+    y1 = int(np.ceil(np.max(yy0)*Q + 17100))
+    for a in range(9):
         dr1 = dr + f'/A{a}'
         if not os.path.exists(dr1):
             os.mkdir(dr1)
-        x0t = int(np.floor(x0)) // 512
-        y0t = int(np.floor(y0)) // 512
-        x1t = (int(np.ceil(x1))+511) // 512
-        y1t = (int(np.ceil(y1))+511) // 512
+        x0t = x0 // 512
+        y0t = y0 // 512
+        x1t = x1 // 512
+        y1t = y1 // 512
         def saveone(x, y): # tile numbers!
             print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*512
             xr = xl + 512
             yt = y*512
             yb = yt + 512
-            cv2.imwrite(f'{dr}/A{a}/Y{y}/X{x}.jpg', img[yt:yb, xl:xr])
+            img2 = img1[yt:yb, xl:xr]
+            print(xl,yt,img2.shape,np.mean(img2))
+            if not cv2.imwrite(f'{dr}/A{a}/Y{y}/X{x}.jpg', img2):
+                raise Exception(f'Failed to save Z{z} A{a} X{x} Y{y}')
         fac = factory.Factory(8)
         for yt in range(y0t, y1t):
             dr2 = dr1 + f'/Y{yt}'
@@ -103,7 +107,7 @@ def render(z):
         y0 = y0 // 2
         x1 = (x1 + 1) // 2
         y1 = (y1 + 1) // 2
-        img = rawimage.iscale(img, 2)
+        img1 = rawimage.iscale(img1, 2)
     db.exe(f'insert into {tbl} (z) values ({z})')
 
 def perhapsrender(z):
