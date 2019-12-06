@@ -8,6 +8,7 @@ import factory
 import os
 import rawimage
 import warp
+import sys
 
 tbl = 'renderq1done'
 odir = '/lsi2/dw/170428/q1pyramid'
@@ -93,23 +94,24 @@ def render(z):
         y0t = y0 // TS
         x1t = (x1+TS-1) // TS
         y1t = (y1+TS-1) // TS
-        def saveone(x, y): # tile numbers!
+        def saveone(x, y, dr2): # tile numbers!
             print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*TS
             xr = xl + TS
             yt = y*TS
             yb = yt + TS
             img2 = img1[yt:yb, xl:xr]
-            print(xl,yt,img2.shape,np.mean(img2))
-            if not cv2.imwrite(f'{dr}/A{a}/Y{y}/X{x}.jpg', img2):
-                raise Exception(f'Failed to save Z{z} A{a} X{x} Y{y}')
+            print(f'Z{z} A{a} X{x} Y{y}', xl,yt,img2.shape,np.mean(img2))
+            if not cv2.imwrite(f'{dr2}/X{x}.jpg', img2):
+                print(f'Failed to save Z{z} A{a} X{x} Y{y}')
+                sys.exit(1)
         fac = factory.Factory(8)
         for yt in range(y0t, y1t):
             dr2 = dr1 + f'/Y{yt}'
             if not os.path.exists(dr2):
                 os.mkdir(dr2)
             for xt in range(x0t, x1t):
-                fac.request(saveone, xt, yt)
+                fac.request(saveone, xt, yt, dr2)
         fac.shutdown()
         x0 = x0 // 2
         y0 = y0 // 2
