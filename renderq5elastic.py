@@ -41,23 +41,24 @@ def render(z):
         x0, y0 = renderq5utils.rigidtileposition(r, m, s)
         for ix in range(IX):
             for iy in range(IY):
+                print(f'Rendering Z{z} M{m} IX{ix} IY{iy}')
                 xl1 = xx[ix]
                 xr1 = xx[ix+1]
                 yt1 = yy[iy]
                 yb1 = yy[iy+1]
-                xywh = [xl1, yt1, xr1, yb1]
+                xywh = [xl1, yt1, xr1-xl1, yb1-yt1]
                 xmdl = np.array([xx[ix], xx[ix], xx[ix+1], xx[ix+1]])
                 ymdl = np.array([yy[iy], yy[iy+1], yy[iy], yy[iy+1]])
                 dx, dy = renderq5utils.interpolatedshifts(r, m, s, xmdl, ymdl)
                 xtile = xmdl - x0 - dx
                 ytile = ymdl - y0 - dy
                 warp.warpToRectangle(img, xywh, tile, xmdl, ymdl, xtile, ytile)
-    dr = f'{odir}/Z{z//100:02d}'
+    dr = f'{odir}/Z{z//100}'
     if not(os.path.exists(dr)):
         os.mkdir(dr)
-    fn = f'{dr}/{z%100:02d}.jpg'
+    fn = f'{dr}/{z%100}.jpg'
     cv2.imwrite(fn, img)
-
+    db.exe(f'insert into {tbl} (z) values ({z})')
     
 def perhapsrender(z):
     if db.sel(f'select count(1) from {tbl} where z={z}')[0][0]==0:

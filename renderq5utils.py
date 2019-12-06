@@ -75,7 +75,7 @@ def globalbbox():
     x1 -= bbox[0]
     y1 -= bbox[1]
     return (int(np.floor(x0)), int(np.floor(y0)),
-            int(np.ceil(x1)), int(np.ceil(y1)))
+            int(np.ceil(x1)) + X, int(np.ceil(y1)) + Y)
 
 def shiftcollection(z0, r, m, s):
     '''SHIFTCOLLECTION - Known shifts according to elastic solution
