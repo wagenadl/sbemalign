@@ -118,7 +118,10 @@ def render(z):
         y0 = y0 // 2
         x1 = (x1 + 1) // 2
         y1 = (y1 + 1) // 2
-        img1 = rawimage.ipad(rawimage.iscale(img1, 2), TS)
+        img1 = rawimage.iscale(img1, 2)
+        print(f'Z{z} A{a} Image scaled to ', img1.shape)
+        img1 = rawimage.ipad(img1, TS)
+        print(f'Z{z} A{a} Image padded to ', img1.shape)
     db.exe(f'insert into {tbl} (z) values ({z})')
 
 def perhapsrender(z):

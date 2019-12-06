@@ -135,7 +135,7 @@ def iscale(img, n):
     Kx = x//n
     if n*Ky<y or n*Kx<x:
         img = img[0:n*Ky,0:n*Kx]
-    return cv2.resize(img, (Ky, Kx), interpolation=cv2.INTER_AREA)
+    return cv2.resize(img, (Kx, Ky), interpolation=cv2.INTER_AREA)
 
 def ipad(img, pad=512, padc=0):
     '''IPAD - Pad an image
