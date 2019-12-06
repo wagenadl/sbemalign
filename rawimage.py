@@ -245,3 +245,8 @@ def q25img(r, m, s):
     #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
     return loadimage(scaledtile(r, m, s, 25))
 
+def fullq1img(r, m, s):
+    img = loadimage(rawtile(r, m, s))
+    return to8bit(img)
+
+    
