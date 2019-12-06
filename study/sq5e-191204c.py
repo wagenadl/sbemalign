@@ -95,7 +95,7 @@ x,y=ap[(20,2,69)]
 dx1=dx[(20,2,69)]
 import pyqplot as qp
 qp.figure('/tmp/s1')
-qp.mark(y[x>1400], dx1[x>1400])
+qp.mark(y[x>1650], dx1[x>1650])
 qp.yaxis()
 
 qp.figure('/tmp/s2')
