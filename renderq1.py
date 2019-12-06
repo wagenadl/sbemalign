@@ -94,14 +94,15 @@ def render(z):
         y0t = y0 // TS
         x1t = (x1+TS-1) // TS
         y1t = (y1+TS-1) // TS
-        def saveone(x, y, dr2): # tile numbers!
+        def saveone(x, y, dr2, img1): # x and y are tile numbers!
             print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*TS
             xr = xl + TS
             yt = y*TS
             yb = yt + TS
             img2 = img1[yt:yb, xl:xr]
-            print(f'Z{z} A{a} X{x} Y{y}', xl,yt,img2.shape,np.mean(img2))
+            print(f'Z{z} A{a} X{x} Y{y}', xl,yt,img1.shape,
+                  img2.shape,np.mean(img2))
             if not cv2.imwrite(f'{dr2}/X{x}.jpg', img2):
                 print(f'Failed to save Z{z} A{a} X{x} Y{y}')
                 sys.exit(1)
@@ -111,7 +112,7 @@ def render(z):
             if not os.path.exists(dr2):
                 os.mkdir(dr2)
             for xt in range(x0t, x1t):
-                fac.request(saveone, xt, yt, dr2)
+                fac.request(saveone, xt, yt, dr2, img1)
         fac.shutdown()
         x0 = x0 // 2
         y0 = y0 // 2
