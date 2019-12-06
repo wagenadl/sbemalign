@@ -18,8 +18,8 @@ X = Y = 684*5 # Full tile size in q5 space!
 db = aligndb.DB()
 ri = db.runinfo()
 
-r = 21
-s = 50
+r = 5
+s = 10
 
 tiles = []
 M = ri.nmontages(r)

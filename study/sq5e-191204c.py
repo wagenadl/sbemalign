@@ -91,20 +91,42 @@ dy = scipy.sparse.linalg.spsolve(Ay.tocsr(), by)
 dx = mp5.elasticdeindex(idx, dx)
 dy = mp5.elasticdeindex(idx, dy)
 
-x,y=ap[(20,2,69)]
-dx1=dx[(20,2,69)]
 import pyqplot as qp
 qp.figure('/tmp/s1')
-qp.mark(y[x>1650], dx1[x>1650])
+qp.subplot(1,2,1)
+x,y=ap[(20,2,69)]
+dx1=dx[(20,2,69)]
+qp.mark(y[x>1400], dx1[x>1400])
+qp.xaxis()
+qp.yaxis()
+
+qp.subplot(1,2,2)
+x,y=ap[(20,3,69)]
+dx1=dx[(20,3,69)]
+qp.mark(y[x<1900], dx1[x<1900])
+qp.xaxis()
 qp.yaxis()
 
 qp.figure('/tmp/s2')
+x,y=ap[(20,2,69)]
+dx1=dx[(20,2,69)]
+dy1=dy[(20,2,69)]
 qp.marker('+')
 qp.mark(x, y)
+S=100
+qp.pen('r',1)
+for k in range(len(x)):
+    qp.plot(x[k]+S*np.array([0,dx1[k]]),
+            y[k]+S*np.array([0,dy1[k]]))
 
 xx1, yy1, dx1, dy1 = db.vsel(f'''select x, y, dx, dy from solveq5elastic
    where r=20 and m=2 and s=69 and z0=3404''')
 qp.figure('/tmp/s3')
 qp.marker('+')
 qp.mark(xx1,yy1)
+
+mp=matchpointsq5.find(mpp, r1=20, m1=2, s1=69,m2=3) 
+print(dx[(20,2,69)][mp[0].kk1])
+print(dx[(20,3,69)][mp[0].kk2])
+print(dx[(20,2,69)][mp[0].kk1] -       dx[(20,3,69)][mp[0].kk2])
 
