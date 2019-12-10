@@ -108,6 +108,7 @@ def perhapsoptisub(z0):
     ap, dx, dy = optisub(z0)
     with db.db:
         with db.db.cursor() as c:
+            c.execute(f'delete from {outtbl} where z0={z0}') # clean up
             for rms,xy in ap.items():
                 r,m,s = rms
                 dx1 = dx[rms]
@@ -125,8 +126,15 @@ fac = factory.Factory(nthreads)
 R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
 
-for z0 in range(4, Z-nz//2, nz//2):
-    fac.request(perhapsoptisub, z0)
+args = sys.argv
+args.pop[0]
+if len(args)>0:
+    for a in args:
+        z0 = int(a)
+        optisub(z0)
+else:
+    for z0 in range(4, Z-nz//2, nz//2):
+        fac.request(perhapsoptisub, z0)
     
 fac.shutdown()
 

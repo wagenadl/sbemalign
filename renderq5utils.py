@@ -268,6 +268,9 @@ def _interpolatedshift(z0, r, m, s, x, y, sc):
     B[0] = np.sum(wk*sc[2])
     B[1] = np.sum(wk*sc[2]*Deltaxk)
     B[2] = np.sum(wk*sc[2]*Deltayk)
+    print('Solving')
+    print('M = ', M)
+    print('B = ', B)
     abc = np.linalg.solve(M, B)
     #print(abc)
     dx = abc[0]
