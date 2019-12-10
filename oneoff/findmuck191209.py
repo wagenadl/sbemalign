@@ -27,10 +27,10 @@ for z0 in range(4, 9504, 100):
         zz0.append(z0)
 
 
-with db.db.cursor() as c:
-    for z0 in zz0:
-        c.execute(f'delete from solveq5elastic where z0={z0}')
-        c.execute(f'delete from renderq5elasticdone where z>={z0} and z<{z0+200}')
-        c.execute(f'delete from renderq1done where z>={z0} and z<{z0+200}')    
+for z0 in zz0:
+    print(z0)
+    db.exe(f'delete from solveq5elastic where z0={z0}')
+    db.exe(f'delete from renderq5elasticdone where z>={z0} and z<{z0+200}')
+    db.exe(f'delete from renderq1done where z>={z0} and z<{z0+200}')    
 
         
