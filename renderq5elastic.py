@@ -41,7 +41,7 @@ def render(z):
         x0, y0 = renderq5utils.rigidtileposition(r, m, s)
         for ix in range(IX):
             for iy in range(IY):
-                print(f'Rendering Z{z} M{m} IX{ix} IY{iy}')
+                #print(f'Rendering Z{z} M{m} IX{ix} IY{iy}')
                 xl1 = xx[ix]
                 xr1 = xx[ix+1]
                 yt1 = yy[iy]
