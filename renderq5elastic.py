@@ -8,6 +8,7 @@ import factory
 import os
 import rawimage
 import warp
+import sys
 
 tbl = 'renderq5elasticdone'
 odir = '/lsi2/dw/170428/q5elastic'
@@ -67,7 +68,15 @@ def perhapsrender(z):
 if not(os.path.exists(odir)):
     os.mkdir(odir)
 maketable()    
-fac = factory.Factory(12)
-for z in range(4,9604):
+args = sys.argv
+args.pop(0)
+if len(args)>0:
+  for a in args:
+    z = int(a)
+    render(z)
+else: 
+  fac = factory.Factory(12)
+  for z in range(4,9604):
     fac.request(perhapsrender, z)
-    
+  fac.shutdown()
+  

@@ -98,29 +98,37 @@ def optisub(z0):
     dy = mp5.elasticdeindex(idx, dy)
     return ap, dx, dy
 
-def perhapsoptisub(z0):
-    cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
-    if cnt[0][0]==0:
-        print(f'Skipping {z0}+{nz} - not yet done at rigid level')
-        return
-    cnt = db.sel(f'select count(*) from {outtbl} where z0={z0}')
-    if cnt[0][0]>0:
-        return
+def dooptisub(z0):
     ap, dx, dy = optisub(z0)
     print(f'Inserting {z0}+{nz} into db')
     with db.db:
         with db.db.cursor() as c:
             c.execute(f'delete from {outtbl} where z0={z0}') # clean up
             for rms,xy in ap.items():
+                K = len(xy[0])
                 r,m,s = rms
-                dx1 = dx[rms]
-                dy1 = dy[rms]
-                for k in range(len(xy[0])):
+                if rms in dx and rms in dy:
+                    dx1 = dx[rms]
+                    dy1 = dy[rms]
+                else:
+                    dx1 = np.zeros(K)
+                    dy1 = np.zeros(K)
+                    print(f'Warning: no data in {z0} for {rms}')
+                for k in range(K):
                     c.execute(f'''insert into {outtbl}
                     ( z0, r, m, s, x, y, dx, dy )
                     values
                     ( {z0}, {r}, {m}, {s},
                     {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
+
+def perhapsoptisub(z0):
+    cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
+    if cnt[0][0]==0:
+        print(f'Skipping {z0}+{nz} - not yet done at rigid level')
+        return
+    cnt = db.sel(f'select count(*) from {outtbl} where z0={z0}')
+    if cnt[0][0]==0:
+        dooptisub(z0)
         
 createtable()
 
@@ -132,7 +140,7 @@ args.pop(0)
 if len(args)>0:
     for a in args:
         z0 = int(a)
-        optisub(z0)
+        dooptisub(z0)
 else:
     fac = factory.Factory(nthreads)
     for z0 in range(4, Z-nz//2, nz//2):
