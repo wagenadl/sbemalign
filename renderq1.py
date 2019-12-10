@@ -44,9 +44,9 @@ def render(z):
     for m in range(M):
         print(f'Loading Z{z} M{m}')
         tile = rawimage.fullq1img(r, m, s)
-        print(f'Replacing 0 by 1 in Z{z} M{m}')
+        #print(f'Replacing 0 by 1 in Z{z} M{m}')
         tile[tile==0] = 1
-        print(f'Processing Z{z} M{m}')
+        #print(f'Processing Z{z} M{m}')
         xx, yy = renderq5utils.rendergrid(r, m, s)
         IX = len(xx) - 1
         IY = len(yy) - 1
@@ -55,7 +55,7 @@ def render(z):
         yy0.append(y0)
         fac = factory.Factory(7)
         def renderone(ix, iy):
-            print(f'Rendering Z{z} M{m} IX{ix} IY{iy}')
+            #print(f'Rendering Z{z} M{m} IX{ix} IY{iy}')
             xl1 = xx[ix]
             xr1 = xx[ix+1]
             yt1 = yy[iy]
@@ -87,6 +87,7 @@ def render(z):
     x1 = int(np.ceil(np.max(xx0)*Q + FS))
     y1 = int(np.ceil(np.max(yy0)*Q + FS))
     for a in range(9):
+        print(f'Saving Z{z} A{a}')
         dr1 = dr + f'/A{a}'
         if not os.path.exists(dr1):
             os.mkdir(dr1)
@@ -95,14 +96,14 @@ def render(z):
         x1t = (x1+TS-1) // TS
         y1t = (y1+TS-1) // TS
         def saveone(x, y, dr2, img1): # x and y are tile numbers!
-            print(f'Saving Z{z} A{a} X{x} Y{y}')
+            #print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*TS
             xr = xl + TS
             yt = y*TS
             yb = yt + TS
             img2 = img1[yt:yb, xl:xr]
-            print(f'Z{z} A{a} X{x} Y{y}', xl,yt,img1.shape,
-                  img2.shape,np.mean(img2))
+            #print(f'Z{z} A{a} X{x} Y{y}', xl,yt,img1.shape,
+            #      img2.shape,np.mean(img2))
             if not cv2.imwrite(f'{dr2}/X{x}.jpg', img2):
                 print(f'Failed to save Z{z} A{a} X{x} Y{y}')
                 sys.exit(1)
@@ -119,9 +120,9 @@ def render(z):
         x1 = (x1 + 1) // 2
         y1 = (y1 + 1) // 2
         img1 = rawimage.iscale(img1, 2)
-        print(f'Z{z} A{a} Image scaled to ', img1.shape)
+        #print(f'Z{z} A{a} Image scaled to ', img1.shape)
         img1 = rawimage.ipad(img1, TS)
-        print(f'Z{z} A{a} Image padded to ', img1.shape)
+        #print(f'Z{z} A{a} Image padded to ', img1.shape)
     db.exe(f'insert into {tbl} (z) values ({z})')
 
 def perhapsrender(z):
