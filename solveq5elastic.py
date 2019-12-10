@@ -14,6 +14,7 @@ X = Y = 684
 
 nthreads = 12
 
+import sys
 import aligndb
 import factory
 import numpy as np
@@ -122,7 +123,6 @@ def perhapsoptisub(z0):
         
 createtable()
 
-fac = factory.Factory(nthreads)
 R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
 
@@ -133,8 +133,8 @@ if len(args)>0:
         z0 = int(a)
         optisub(z0)
 else:
+    fac = factory.Factory(nthreads)
     for z0 in range(4, Z-nz//2, nz//2):
         fac.request(perhapsoptisub, z0)
-    
-fac.shutdown()
+    fac.shutdown()
 
