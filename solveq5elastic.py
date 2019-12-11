@@ -128,7 +128,7 @@ def dooptisub(z0):
                 valall = ','.join(vallist)
                 c.execute(f'''insert into {outtbl}
                     ( z0, r, m, s, x, y, dx, dy )
-                values ({valall})''')
+                values {valall}''')
 
 def perhapsoptisub(z0):
     cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
