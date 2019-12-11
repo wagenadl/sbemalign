@@ -82,7 +82,6 @@ def subtract_rigid(z0, mpp):
     return mpp
 
 def optisub(z0):
-    print(f'Working on {z0}+{nz}')
     sv = ri.subvolume(z0, nz)
     mpp = subvol_elastic(sv)
     subtract_mont(z0, mpp)
@@ -99,8 +98,9 @@ def optisub(z0):
     return ap, dx, dy
 
 def dooptisub(z0):
+    print(f'Optimizing Z{z0}+{nz}')
     ap, dx, dy = optisub(z0)
-    print(f'Inserting {z0}+{nz} into db')
+    print(f'Inserting Z{z0}+{nz} into db')
     with db.db:
         with db.db.cursor() as c:
             c.execute(f'delete from {outtbl} where z0={z0}') # clean up
