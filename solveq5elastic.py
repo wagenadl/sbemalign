@@ -14,6 +14,7 @@ X = Y = 684
 
 nthreads = 12
 
+import sys
 import aligndb
 import factory
 import numpy as np
@@ -39,8 +40,15 @@ def createtable():
     dy float )''')
     # x, y are the x_k on p. 1615.
     # dx, dy are the ξ_k on p. 1615.
-    db.exe('create index if not exists sq5e_rms on solveq5elastic (r, m, s)')
 
+def dropindex():
+    db.nofail('drop index  sq5e_rms')
+    db.nofail('drop index  sq5e_z0')
+
+def createindex():    
+    db.exe('create index if not exists sq5e_rms on solveq5elastic (r, m, s)')
+    db.exe('create index if not exists sq5e_z0 on solveq5elastic (z0)')
+    
 def subvol_elastic(sv):
     mpp = []
     first = True
@@ -96,37 +104,57 @@ def optisub(z0):
     dy = mp5.elasticdeindex(idx, dy)
     return ap, dx, dy
 
+def dooptisub(z0):
+    print(f'Optimizing Z{z0}+{nz}')
+    ap, dx, dy = optisub(z0)
+    print(f'Inserting Z{z0}+{nz} into db')
+    with db.db:
+        with db.db.cursor() as c:
+            c.execute(f'delete from {outtbl} where z0={z0}') # clean up
+            for rms,xy in ap.items():
+                K = len(xy[0])
+                r,m,s = rms
+                if rms in dx and rms in dy:
+                    dx1 = dx[rms]
+                    dy1 = dy[rms]
+                else:
+                    dx1 = np.zeros(K)
+                    dy1 = np.zeros(K)
+                    print(f'Warning: no data in {z0} for {rms}')
+                vallist = []
+                for k in range(K):
+                    vallist.append(f'''( {z0}, {r}, {m}, {s},
+                    {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
+                valall = ','.join(vallist)
+                c.execute(f'''insert into {outtbl}
+                    ( z0, r, m, s, x, y, dx, dy )
+                values {valall}''')
+
 def perhapsoptisub(z0):
     cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
     if cnt[0][0]==0:
         print(f'Skipping {z0}+{nz} - not yet done at rigid level')
         return
     cnt = db.sel(f'select count(*) from {outtbl} where z0={z0}')
-    if cnt[0][0]>0:
-        return
-    print(f'Working on {z0}+{nz}')
-    ap, dx, dy = optisub(z0)
-    with db.db:
-        with db.db.cursor() as c:
-            for rms,xy in ap.items():
-                r,m,s = rms
-                dx1 = dx[rms]
-                dy1 = dy[rms]
-                for k in range(len(xy[0])):
-                    c.execute(f'''insert into {outtbl}
-                    ( z0, r, m, s, x, y, dx, dy )
-                    values
-                    ( {z0}, {r}, {m}, {s},
-                    {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
+    if cnt[0][0]==0:
+        dooptisub(z0)
         
 createtable()
+dropindex()
 
-fac = factory.Factory(nthreads)
 R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
 
-for z0 in range(4, Z-nz//2, nz//2):
-    fac.request(perhapsoptisub, z0)
-    
-fac.shutdown()
+args = sys.argv
+args.pop(0)
+if len(args)>0:
+    for a in args:
+        z0 = int(a)
+        dooptisub(z0)
+else:
+    fac = factory.Factory(nthreads)
+    for z0 in range(4, Z-nz//2, nz//2):
+        fac.request(perhapsoptisub, z0)
+    fac.shutdown()
 
+createindex()

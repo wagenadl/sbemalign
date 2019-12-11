@@ -219,7 +219,7 @@ class MatchPoints:
         for m2 in range(ri.nmontages(r2)):
             try:
                 for mp in MatchPoints.backtrans(r2, m2, thr, perslice):
-                    bck[(mp.m1, m2)] = mp
+                    bck[(mp.m2, m2)] = mp
             except Exception as e:
                 print(f'WARNING: Failed to find any points>{thr} in trans R{r2}M{m2} : R{r1}: ', e)
         mpp = []
