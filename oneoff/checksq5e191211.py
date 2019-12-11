@@ -5,6 +5,7 @@
 
 import aligndb
 import numpy as np
+import sys
 db = aligndb.DB()
 ri = db.runinfo()
 
@@ -19,11 +20,13 @@ for z0 in range(4, 9504, 100):
         for vs in range(vv.s0, vv.s1):
             N = np.sum(np.logical_and(r==vv.r, s==vs))
             if N!=M:
-                print('Mismatch: ', sv, ' vs ', vv.r, vs)
+                print(f'Mismatch at Z{z0} R{vv.r} S{vs}: M={M} vs N={N}')
                 bad = True
     if bad:
         zz0.append(z0)
 print(zz0)
+
+sys.exit(1)
 
 for z in zz0:
     db.exe(f'delete from solveq5elastic where z0={z}')
