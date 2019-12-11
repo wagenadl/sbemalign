@@ -40,8 +40,15 @@ def createtable():
     dy float )''')
     # x, y are the x_k on p. 1615.
     # dx, dy are the ξ_k on p. 1615.
-    db.exe('create index if not exists sq5e_rms on solveq5elastic (r, m, s)')
 
+def dropindex():
+    db.nofail('drop index  sq5e_rms')
+    db.nofail('drop index  sq5e_z0')
+
+def createindex():    
+    db.exe('create index if not exists sq5e_rms on solveq5elastic (r, m, s)')
+    db.exe('create index if not exists sq5e_z0 on solveq5elastic (z0)')
+    
 def subvol_elastic(sv):
     mpp = []
     first = True
@@ -133,6 +140,7 @@ def perhapsoptisub(z0):
         dooptisub(z0)
         
 createtable()
+dropindex()
 
 R = ri.nruns()
 Z = ri.z0(R) + ri.nslices(R)
@@ -149,3 +157,4 @@ else:
         fac.request(perhapsoptisub, z0)
     fac.shutdown()
 
+createindex()
