@@ -114,12 +114,14 @@ def dooptisub(z0):
                     dx1 = np.zeros(K)
                     dy1 = np.zeros(K)
                     print(f'Warning: no data in {z0} for {rms}')
+                vallist = []
                 for k in range(K):
-                    c.execute(f'''insert into {outtbl}
-                    ( z0, r, m, s, x, y, dx, dy )
-                    values
-                    ( {z0}, {r}, {m}, {s},
+                    vallist.append(f'''( {z0}, {r}, {m}, {s},
                     {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
+                valall = ','.join(vallist)
+                c.execute(f'''insert into {outtbl}
+                    ( z0, r, m, s, x, y, dx, dy )
+                values ({valall})''')
 
 def perhapsoptisub(z0):
     cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')
