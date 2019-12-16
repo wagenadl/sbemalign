@@ -447,7 +447,21 @@ def deindex(idx, xx):
     for k,v in idx.items():
         res[k] = xx[v]
     return res
-    
+
+def weightdx(mp, ax):
+    w = len(mp.xx1) # Could be changed, of course
+    if w==0:
+        loc = f'R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}'
+        if (mp.r1==35 and mp.s1==130 and mp.m1>=6) \
+           or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
+            print(f'Ignoring lack of matchpoints {j} for {loc}')
+            Dx = 0 
+        else:
+            raise Exception(f'matchpoints {j} empty for {loc}')
+    else:
+        Dx = np.mean(mp.xp(ax) - mp.x(ax))
+    return w, Dx
+
 def matrix(mpp, idx, ax):
     EPSILON = 1e-6
     K = len(idx)
@@ -457,17 +471,7 @@ def matrix(mpp, idx, ax):
     for mp in mpp:
         k = idx[(mp.r1, mp.m1, mp.s1)]
         kp = idx[(mp.r2, mp.m2, mp.s2)]
-        w = len(mp.xx1) # Could be changed, of course
-        if w==0:
-            loc = f'R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}'
-            if (mp.r1==35 and mp.s1==130 and mp.m1>=6) \
-               or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
-                print(f'Ignoring lack of matchpoints {j} for {loc}')
-                Dx = 0 
-            else:
-                raise Exception(f'matchpoints {j} empty for {loc}')
-        else:
-            Dx = np.mean(mp.xp(ax) - mp.x(ax))
+        w, Dx = weightdx(mp, ax)
         A[k,k] += w
         A[kp,kp] += w
         A[k,kp] -= w
@@ -476,6 +480,45 @@ def matrix(mpp, idx, ax):
         b[kp] -= w*Dx
         j += 1
     return A, b
+
+def tension(mpp, idx, xm, ym):
+    res = {}
+    for mp in mpp:
+        rms1 = (mp.r1, mp.m1, mp.s1)
+        rms2 = (mp.r2, mp.m2, mp.s2)
+        k = idx[rms1]
+        kp = idx[rms2]
+        w, Dx = weightdx(mp, 0)
+        w, Dy = weightdx(mp, 1)
+        dx = xm[k] - xm[kp]
+        dy = ym[k] - ym[kp]
+        sx = dx - Dx
+        sy = dy - Dy
+        res[(rms1, rms2)] = (np.max(sx**2), np.max(sy**2))
+    return res
+
+def elastictension(mpp, idx, xm, ym):
+    res = {}
+    for mp in mpp:
+        rms1 = (mp.r1, mp.m1, mp.s1)
+        rms2 = (mp.r2, mp.m2, mp.s2)
+        k = idx[rms1]
+        kp = idx[rms2]
+        sxx = []
+        syy = []
+        for n in range(len(mp.xx1)):
+            p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
+            pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
+            Dx = mp.xp(0)[n] - mp.x(0)[n]
+            Dy = mp.xp(1)[n] - mp.x(1)[n]
+            dx = xm[p] - xm[pp]
+            dy = ym[p] - ym[pp]
+            sx = dx - Dx
+            sy = dy - Dy
+            sxx.append(sx)
+            syy.append(sy)
+        res[(rms1, rms2)] = (np.max(sxx**2), np.max(syy**2))
+    return res
 
 def elasticmatrix(mpp, idx, ap, ax):
     EPSILON = 1e-9
