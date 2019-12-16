@@ -222,7 +222,7 @@ class MatchPoints:
         if minthr is None:
             snr = db.vsel(f'''select snrb from {transtbl}
             where r={r1} and r2={r2}''')
-            minthr = 0.2 * dynamicthreshold(snr)
+            minthr = np.max((10, 0.2 * dynamicthreshold(snr)))
             thr = -minthr
         for m1 in range(ri.nmontages(r1)):
             try:
