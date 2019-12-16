@@ -158,6 +158,9 @@ class MatchPoints:
         # r2 must be r1 ± 1.
         # "Forward" is when r1>r2.
         # Note that we are changing our nomenclature here to match the table.
+        # If THR is None, we use a straightforward dynamic threshold.
+        # If THR < 0, we use a dynamic threshold that can not be less
+        # than |THR|.
         (s1,s2,m2, x1,y1, x2,y2, snr) = db.vsel(f'''select
         s,s2,m2,
         (ix+0.5)*{X}-dx/2-dxb/2,
@@ -169,6 +172,11 @@ class MatchPoints:
         where r={r1} and m={m1} and r2={r2}''')
         if thr is None:
             thr = dynamicthreshold(snr)
+        elif thr<0:
+            thr = -thr
+            thr1 = dynamicthreshold(snr)
+            if -thr > thr1:
+                thr = thr1
         keep = snr>thr
         s1 = s1[keep]
         s2 = s2[keep]
@@ -210,6 +218,12 @@ class MatchPoints:
             raise Exception('r2 must be r1+1')
         fwd = {} # keys are (m1,m2)
         bck = {} # keys are (m1,m2) [not the other way around]
+        minthr = thr
+        if minthr is None:
+            snr = db.vsel(f'''select snrb from {transtbl}
+            where r={r1} and r2={r2}''')
+            minthr = 0.2 * dynamicthreshold(snr)
+            thr = -minthr
         for m1 in range(ri.nmontages(r1)):
             try:
                 for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
