@@ -36,6 +36,9 @@ def render(z):
     for m in range(M):
         print(f'Rendering Z{z} M{m}')
         tile = rawimage.fullq5img(r, m, s)
+        if tile is None:
+            print(f'Not rendering Z{z} M{m} - No image')
+            continue
         xx, yy = renderq5utils.rendergrid(r, m, s)
         IX = len(xx) - 1
         IY = len(yy) - 1
@@ -47,6 +50,8 @@ def render(z):
                 xr1 = xx[ix+1]
                 yt1 = yy[iy]
                 yb1 = yy[iy+1]
+                if xr1 <= xl1 or yb1 <= yt1:
+                    continue
                 xywh = [xl1, yt1, xr1-xl1, yb1-yt1]
                 xmdl = np.array([xx[ix], xx[ix], xx[ix+1], xx[ix+1]])
                 ymdl = np.array([yy[iy], yy[iy+1], yy[iy], yy[iy+1]])
