@@ -502,13 +502,12 @@ def elastictension(mpp, idx, xm, ym):
     for mp in mpp:
         rms1 = (mp.r1, mp.m1, mp.s1)
         rms2 = (mp.r2, mp.m2, mp.s2)
-        k = idx[rms1]
-        kp = idx[rms2]
         sxx = []
         syy = []
         for n in range(len(mp.xx1)):
             p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
             pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
+            print(rms1, rms2, n)
             Dx = mp.xp(0)[n] - mp.x(0)[n]
             Dy = mp.xp(1)[n] - mp.x(1)[n]
             dx = xm[p] - xm[pp]
@@ -517,7 +516,7 @@ def elastictension(mpp, idx, xm, ym):
             sy = dy - Dy
             sxx.append(sx)
             syy.append(sy)
-        res[(rms1, rms2)] = (np.max(sxx**2), np.max(syy**2))
+        res[(rms1, rms2)] = (np.max(np.array(sxx)**2), np.max(np.array(syy)**2))
     return res
 
 def elasticmatrix(mpp, idx, ap, ax):
