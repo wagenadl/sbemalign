@@ -30,6 +30,11 @@ class Mapper:
         self.xr_tile = np.max(self.xtile)
         self.yt_tile = np.min(self.ytile)
         self.yb_tile = np.max(self.ytile)
+        self.xcenter = (self.xl_tile + self.xr_tile)/2
+        self.ycenter = (self.yt_tile + self.yb_tile)/2
+
+    def centerdist2(self, x, y):
+        return (x - self.xcenter)**2 + (y - self.ycenter)**2
 
     def __repr__(self):
         return f"[({self.xtile[0]:.0f},{self.ytile[0]:.0f}),({self.xtile[1]:.0f},{self.ytile[1]:.0f}),({self.xtile[2]:.0f},{self.ytile[2]:.0f}),({self.xtile[3]:.0f},{self.ytile[3]:.0f})]"
