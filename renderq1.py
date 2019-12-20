@@ -44,6 +44,9 @@ def render(z):
     for m in range(M):
         print(f'Loading Z{z} M{m}')
         tile = rawimage.fullq1img(r, m, s)
+        if tile is None:
+            print(f'Not rendering Z{z} M{m} - No image')
+            continue
         #print(f'Replacing 0 by 1 in Z{z} M{m}')
         tile[tile==0] = 1
         #print(f'Processing Z{z} M{m}')
@@ -60,6 +63,9 @@ def render(z):
             xr1 = xx[ix+1]
             yt1 = yy[iy]
             yb1 = yy[iy+1]
+            if xr1<=xl1 or yb1<=yt1:
+                print(f'Nothing to render for Z{z} M{m} IX{ix} IY{iy}')
+                return
             xywh = [xl1*Q, yt1*Q, (xr1-xl1)*Q, (yb1-yt1)*Q]
             xmdl = np.array([xx[ix], xx[ix], xx[ix+1], xx[ix+1]])
             ymdl = np.array([yy[iy], yy[iy+1], yy[iy], yy[iy+1]])
@@ -95,6 +101,7 @@ def render(z):
         y0t = y0 // TS
         x1t = (x1+TS-1) // TS
         y1t = (y1+TS-1) // TS
+        print(f'Tile range X{x0t}:{x1t} Y{y0t}:{y1t}')
         def saveone(x, y, dr2, img1): # x and y are tile numbers!
             #print(f'Saving Z{z} A{a} X{x} Y{y}')
             xl = x*TS

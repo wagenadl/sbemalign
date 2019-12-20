@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import rawimage
 import factory
 import os

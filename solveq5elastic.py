@@ -73,7 +73,6 @@ def subtract_mont(z0, mpp):
         mp.yy1 += y[np.logical_and(r==mp.r1, m==mp.m1)]
         mp.xx2 += x[np.logical_and(r==mp.r2, m==mp.m2)]
         mp.yy2 += y[np.logical_and(r==mp.r2, m==mp.m2)]
-    return mpp
 
 def subtract_rigid(z0, mpp):
     r,m,s,x,y = db.vsel(f'select r,m,s,x,y from {rigidtbl} where z0={z0}')
@@ -86,7 +85,6 @@ def subtract_rigid(z0, mpp):
         mp.yy1 += y[rms1]
         mp.xx2 += x[rms2]
         mp.yy2 += y[rms2]
-    return mpp
 
 def optisub(z0):
     sv = ri.subvolume(z0, nz)
@@ -121,14 +119,15 @@ def dooptisub(z0):
                     dx1 = np.zeros(K)
                     dy1 = np.zeros(K)
                     print(f'Warning: no data in {z0} for {rms}')
-                vallist = []
-                for k in range(K):
-                    vallist.append(f'''( {z0}, {r}, {m}, {s},
-                    {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
-                valall = ','.join(vallist)
-                c.execute(f'''insert into {outtbl}
-                    ( z0, r, m, s, x, y, dx, dy )
-                values {valall}''')
+                if K>0:
+                    vallist = []
+                    for k in range(K):
+                        vallist.append(f'''( {z0}, {r}, {m}, {s},
+                            {xy[0][k]}, {xy[1][k]}, {dx1[k]}, {dy1[k]} )''')
+                    valall = ','.join(vallist)
+                    c.execute(f'''insert into {outtbl}
+                        ( z0, r, m, s, x, y, dx, dy )
+                        values {valall}''')
 
 def perhapsoptisub(z0):
     cnt = db.sel(f'select count(*) from {rigidtbl} where z0={z0}')

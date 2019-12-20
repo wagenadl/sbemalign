@@ -110,9 +110,15 @@ def alignsubtiles(r, m1, m2, s, ii, sidebyside):
         img2 = img2[:Y//2,:]
         dx0 = 0
         dy0 = Y//2
+        y1t = Y//2 + dy0//2 - Y//4
+        y2t = Y//2 - dy0//2 - Y//4
+        y1b = y1t+Y//2
+        y2b = y2t+Y//2
         x1 = x2 = X//2 + X*ix1
-        y1 = Y//2 - dy0/2 + Y*4
-        y2 = Y//2 + dy0/2
+        y1 = (y1t+y1b)//2 + Y*4
+        y2 = (y2t+y2b)//2
+        #y1 = Y//2 - dy0/2 + Y*4
+        #y2 = Y//2 + dy0/2
     Y,X = img1.shape        
     apo1 = swiftir.apodize(img1)
     apo2 = swiftir.apodize(img2)

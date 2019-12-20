@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import config
 import re
+import os
 #import skimage.io
 
 def rawtile(r, m, s):
@@ -254,6 +255,8 @@ def fullq5img(r, m, s):
     for ix in range(5):
         for iy in range(5):
             im1 = partialq5img(r,m,s,ix,iy)
+            if im1 is None:
+                return None
             img[iy*X:(iy+1)*X,ix*X:(ix+1)*X] = im1
     return img
 
@@ -262,7 +265,10 @@ def q25img(r, m, s):
     return loadimage(scaledtile(r, m, s, 25))
 
 def fullq1img(r, m, s):
-    img = loadimage(rawtile(r, m, s))
+    ifn = rawtile(r, m, s)
+    if not os.path.exists(ifn):
+        return None
+    img = loadimage(ifn)
     return to8bit(img)
 
     

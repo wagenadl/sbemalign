@@ -63,6 +63,9 @@ def renderslice(z0, r, s):
             m = row
             print(f'  Loading fullq5img {r} {m} {s}')
             im1 = rawimage.fullq5img(r, m, s)
+            if im1 is None:
+                print(f'Skipping tile R{r} M{m} S{s} - no image')
+                continue
             yt = yjoin[row] # in model coordinates
             yb = yjoin[row+1]
             xl = int(xxl[m]+1)
@@ -88,6 +91,10 @@ def renderslice(z0, r, s):
                 m = col + C*row
                 print(f'  Loading fullq5img {r} {m} {s}')
                 im1 = rawimage.fullq5img(r, m, s)
+                if im1 is None:
+                    print(f'Skipping tile R{r} M{m} S{s} - no image')
+                    continue
+ 
                 if row==0:
                     yt = int(yyt[m]+1)
                 else:

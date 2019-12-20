@@ -158,6 +158,9 @@ class MatchPoints:
         # r2 must be r1 ± 1.
         # "Forward" is when r1>r2.
         # Note that we are changing our nomenclature here to match the table.
+        # If THR is None, we use a straightforward dynamic threshold.
+        # If THR < 0, we use a dynamic threshold that can not be less
+        # than |THR|.
         (s1,s2,m2, x1,y1, x2,y2, snr) = db.vsel(f'''select
         s,s2,m2,
         (ix+0.5)*{X}-dx/2-dxb/2,
@@ -169,6 +172,11 @@ class MatchPoints:
         where r={r1} and m={m1} and r2={r2}''')
         if thr is None:
             thr = dynamicthreshold(snr)
+        elif thr<0:
+            thr = -thr
+            thr1 = dynamicthreshold(snr)
+            if -thr > thr1:
+                thr = thr1
         keep = snr>thr
         s1 = s1[keep]
         s2 = s2[keep]
@@ -210,6 +218,12 @@ class MatchPoints:
             raise Exception('r2 must be r1+1')
         fwd = {} # keys are (m1,m2)
         bck = {} # keys are (m1,m2) [not the other way around]
+        minthr = thr
+        if minthr is None:
+            snr = db.vsel(f'''select snrb from {transtbl}
+            where r={r1} and r2={r2}''')
+            minthr = np.max((10, 0.2 * dynamicthreshold(snr)))
+            thr = -minthr
         for m1 in range(ri.nmontages(r1)):
             try:
                 for mp in MatchPoints.forwardtrans(r1, m1, thr, perslice):
@@ -433,7 +447,21 @@ def deindex(idx, xx):
     for k,v in idx.items():
         res[k] = xx[v]
     return res
-    
+
+def weightdx(mp, ax):
+    w = len(mp.xx1) # Could be changed, of course
+    if w==0:
+        loc = f'R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}'
+        if (mp.r1==35 and mp.s1==130 and mp.m1>=6) \
+           or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
+            print(f'Ignoring lack of matchpoints {j} for {loc}')
+            Dx = 0 
+        else:
+            raise Exception(f'matchpoints {j} empty for {loc}')
+    else:
+        Dx = np.mean(mp.xp(ax) - mp.x(ax))
+    return w, Dx
+
 def matrix(mpp, idx, ax):
     EPSILON = 1e-6
     K = len(idx)
@@ -443,17 +471,7 @@ def matrix(mpp, idx, ax):
     for mp in mpp:
         k = idx[(mp.r1, mp.m1, mp.s1)]
         kp = idx[(mp.r2, mp.m2, mp.s2)]
-        w = len(mp.xx1) # Could be changed, of course
-        if w==0:
-            loc = f'R{mp.r1}M{mp.m1}S{mp.s1}:R{mp.r2}M{mp.m2}S{mp.s2}'
-            if (mp.r1==35 and mp.s1==130 and mp.m1>=6) \
-               or (mp.r2==35 and mp.s2==130 and mp.m2>=6):
-                print(f'Ignoring lack of matchpoints {j} for {loc}')
-                Dx = 0 
-            else:
-                raise Exception(f'matchpoints {j} empty for {loc}')
-        else:
-            Dx = np.mean(mp.xp(ax) - mp.x(ax))
+        w, Dx = weightdx(mp, ax)
         A[k,k] += w
         A[kp,kp] += w
         A[k,kp] -= w
@@ -462,6 +480,44 @@ def matrix(mpp, idx, ax):
         b[kp] -= w*Dx
         j += 1
     return A, b
+
+def tension(mpp, idx, xm, ym):
+    res = {}
+    for mp in mpp:
+        rms1 = (mp.r1, mp.m1, mp.s1)
+        rms2 = (mp.r2, mp.m2, mp.s2)
+        k = idx[rms1]
+        kp = idx[rms2]
+        w, Dx = weightdx(mp, 0)
+        w, Dy = weightdx(mp, 1)
+        dx = xm[k] - xm[kp]
+        dy = ym[k] - ym[kp]
+        sx = dx - Dx
+        sy = dy - Dy
+        res[(rms1, rms2)] = (np.max(sx**2), np.max(sy**2))
+    return res
+
+def elastictension(mpp, idx, xm, ym):
+    res = {}
+    for mp in mpp:
+        rms1 = (mp.r1, mp.m1, mp.s1)
+        rms2 = (mp.r2, mp.m2, mp.s2)
+        sxx = []
+        syy = []
+        for n in range(len(mp.xx1)):
+            p = idx[(mp.r1, mp.m1, mp.s1, mp.kk1[n])]
+            pp = idx[(mp.r2, mp.m2, mp.s2, mp.kk2[n])]
+            print(rms1, rms2, n)
+            Dx = mp.xp(0)[n] - mp.x(0)[n]
+            Dy = mp.xp(1)[n] - mp.x(1)[n]
+            dx = xm[p] - xm[pp]
+            dy = ym[p] - ym[pp]
+            sx = dx - Dx
+            sy = dy - Dy
+            sxx.append(sx)
+            syy.append(sy)
+        res[(rms1, rms2)] = (np.max(np.array(sxx)**2), np.max(np.array(syy)**2))
+    return res
 
 def elasticmatrix(mpp, idx, ap, ax):
     EPSILON = 1e-9
