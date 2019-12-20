@@ -18,10 +18,18 @@ def applyPerspective(mdl2img, xmodel, ymodel):
     '''APPLYPERSPECTIVE - Apply perspective transform to set of points
     ximage, yimage = APPLYPERSPECTIVE(T, xmodel, ymodel) applies 
     the perspective transform T (probably obtained with GETPERSPECTIVE)
-    to the points specified by (xmodel, ymodel). This function is untested.'''
-    xymodel = np.array([np.stack((xmodel,ymodel), 1)])
+    to the points specified by (xmodel, ymodel).
+    XMODEL, YMODEL may be scalars or numpy vectors.'''
+    isar = type(xmodel)==np.ndarray
+    if isar:
+        xymodel = np.array([np.stack((xmodel,ymodel), 1)], dtype=np.float32)
+    else:
+        xymodel = np.array([[[xmodel,ymodel]]], dtype=np.float32)
     xyimage = cv2.perspectiveTransform(xymodel, mdl2img)
-    return (xyimage[0,:,0], xyimage[0,:,1])
+    if isar:
+        return (xyimage[0,:,0], xyimage[0,:,1])
+    else:
+        return (xyimage[0,0,0], xyimage[0,0,1])
 
 def warpPerspective(img, xmodel,ymodel,ximage,yimage):
     '''WARPPERSPECTIVE - Copy an image to model space
