@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import rawimage
+import factory
+import os
+import numpy as np
+
+fac = factory.Factory(20)
+
+
+def ifile(z):
+    z1 = z//100
+    z2 = z%100
+    return f'/lsi2/dw/170428/q5elastic/Z{z1}/{z2}.jpg'
+
+
+def odir(z=None):
+    od = '/lsi2/dw/170428/q100elastic'
+    if z is None:
+        return od
+    else:
+        return od + f'/Z{z//100}'
+
+def ofile(z):
+    return odir(z) + f'/{z%100}.jpg'
+
+def convert(z):
+    ifn = ifile(z)
+    ofn = ofile(z)
+    print(f'Downscaling {ifn} to {ofn}')
+    img = rawimage.loadimage(ifn)
+    img = rawimage.iscale(img, 20)
+    img = rawimage.ipad(img, 4)
+    img = np.transpose(img)
+    img = np.fliplr(img)
+    if not os.path.exists(odir(z)):
+        os.mkdir(odir(z))
+    rawimage.saveimage(img, ofn)
+
+if not os.path.exists(odir()):
+    os.mkdir(odir())
+for z0 in range(9600):
+    z = z0+4
+    ofn = ofile(z)
+    if not os.path.exists(ofile(z)):
+        fac.request(convert, z)
+fac.shutdown()

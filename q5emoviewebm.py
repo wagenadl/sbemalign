@@ -6,7 +6,7 @@ import os
 import factory
 
 fdir = '/home/wagenaar/q5eframes'
-ovfn = '/lsi2/dw/170428/q5emovie.mp4'
+ovfn = '/lsi2/dw/170428/q5emovie.webm'
 
 def makeframe(z, ifn, ofn):
     print(f'Processing Z{z}')
@@ -45,4 +45,4 @@ for z0 in range(9600):
 fac.shutdown()
 
 print('Converting to movie')
-os.system(f'ffmpeg -i "{fdir}/%d.jpg"  -c:v libx264 -vf format=gray -b:v 0 -crf 32 -threads 8 -an {ovfn}')
+os.system(f'ffmpeg -i "{fdir}/%d.jpg"  -c:v libvpx-vp9 -b:v 0 -crf 35 -threads 8 -an {ovfn}')

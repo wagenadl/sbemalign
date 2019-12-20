@@ -25,7 +25,7 @@ db = aligndb.DB()
 ri = db.runinfo()
 
 def droptable():
-    db.nofail(f'drop table {outtbl}')
+    db.nofail(f'drop table {outtbl} cascade')
     db.nofail(f'drop view {outview}')
 
 def createtable():

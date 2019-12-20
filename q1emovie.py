@@ -4,6 +4,7 @@ import cv2
 import rawimage
 import os
 import factory
+import numpy as np
 import renderq5utils
 
 gbb = renderq5utils.globalbbox()
@@ -14,21 +15,24 @@ R = 512 # tile size
 X0 = fullwidth//R//2
 Y0 = fullheight//R//2
 
+idir = '/lsi2/dw/170428/q1pyramid'
 fdir = '/home/wagenaar/q1eframes'
 ovfn = '/lsi2/dw/170428/q1emovie.mp4'
 
-def makeframe(z, ifn1, ifn2, ofn):
+def makeframe(z, ofn):
     print(f'Processing Z{z}')
     z1 = z//100
     z2 = z%100
     img = np.zeros((R*2,R*2), dtype=np.uint8)
-    for y in rage(2):
+    for y in range(2):
         for x in range(2):
-            ifn = f'/lsi2/dw/170428/q5elastic/Z{z1}/{z2}/Y{Y0+y}/{X0+x}.jpg'
+            ifn = f'{idir}/Z{z1}/{z2}/A0/Y{Y0+y}/X{X0+x}.jpg'
             img1 = rawimage.loadimage(ifn)
-            Y, X = img.shape
+            if img1 is None:
+                raise Exception(f'Failed to load {ifn}')
+            Y, X = img1.shape
             if Y != R or X != R:
-                raise Exception('Mismatching subtile size')
+                raise Exception(f'Mismatching subtile size: {X}x{Y} vs {R}')
             img[y*R:(y+1)*R, x*R:(x+1)*R] = img1
     Y,X = img.shape
     CY = Y//2
@@ -39,7 +43,7 @@ def makeframe(z, ifn1, ifn2, ofn):
 def perhapsmakeframe(z, ofn):
     z1 = z//100
     z2 = z%100
-    ifn = f'/lsi2/dw/170428/q5elastic/Z{z1}/{z2}/Y{Y0}/{X0}.jpg'
+    ifn = f'{idir}/Z{z1}/{z2}/A0/Y{Y0}/X{X0}.jpg'
     if os.path.exists(ofn):
         if os.path.getmtime(ofn) > os.path.getmtime(ifn):
             return
@@ -58,4 +62,5 @@ for z0 in range(9600):
 fac.shutdown()
 
 print('Converting to movie')
-os.system(f'ffmpeg -i "{fdir}/%d.jpg"  -c:v libx265 {ovfn}')
+os.system(f'ffmpeg -i "{fdir}/%d.jpg"  -c:v libx264 -vf format=gray -b:v 0 -crf 32 -threads 8 -an {ovfn}')
+

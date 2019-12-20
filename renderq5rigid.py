@@ -125,15 +125,15 @@ def renderslice(z0, r, s):
 
 argc = len(sys.argv)
 if argc>=2:
-    z0 = int(argc[1])
+    z0 = int(sys.argv[1])
 else:
     z0 = None
 if argc>=3:
-    r = int(argc[2])
+    r = int(sys.argv[2])
 else:
     r = None
 if argc>=4:
-    s = int(argc[3])
+    s = int(sys.argv[3])
 else:
     s = None
 
