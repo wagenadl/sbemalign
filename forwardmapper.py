@@ -80,6 +80,8 @@ def montagemapper(r, m, s):
         return moma[rms]
     
     mp = []
+    if r==1 and s<4:
+        s = 4
     xx, yy = renderq5utils.rendergrid(r, m, s)
     IX = len(xx) - 1
     IY = len(yy) - 1
