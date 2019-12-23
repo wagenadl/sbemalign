@@ -18,9 +18,9 @@ def abpath(a, b, z=None, y=None, x=None):
         zlo = z % 100
         zhi = z // 100
         pth += f'/Z{zhi}/{zlo}'
-        if not y is None:
+        if y is not None:
             pth += f'/Y{y}'
-            if not x is None:
+            if x is not None:
                 pth += f'/X{x}.jpg'
     #print(pth)
     return pth
