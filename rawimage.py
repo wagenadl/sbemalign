@@ -264,11 +264,11 @@ def q25img(r, m, s):
     #url = f'http://leechem.caltech.edu:9090/scaledraw/Q25/R{r}/M{m}/S{m}.ppm'
     return loadimage(scaledtile(r, m, s, 25))
 
-def fullq1img(r, m, s):
+def fullq1img(r, m, s, stretch=.1):
     ifn = rawtile(r, m, s)
     if not os.path.exists(ifn):
         return None
     img = loadimage(ifn)
-    return to8bit(img)
+    return to8bit(img, stretch)
 
     

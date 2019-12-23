@@ -43,7 +43,7 @@ def render(z):
     yy0 = []
     for m in range(M):
         print(f'Loading Z{z} M{m}')
-        tile = rawimage.fullq1img(r, m, s)
+        tile = rawimage.fullq1img(r, m, s, stretch=2.0)
         if tile is None:
             print(f'Not rendering Z{z} M{m} - No image')
             continue
@@ -143,4 +143,5 @@ maketable()
 fac0 = factory.Factory(4)
 for z in range(4,9604):
     fac0.request(perhapsrender, z)
-    
+fac0.shutdown()
+ 
