@@ -96,11 +96,16 @@ def to8bit(img, stretch=.1, ignorethr=None, subst=None):
     extreme values.
     Optional argument STRETCH determines what percentage of pixels gets
     clipped. Default is 0.1%.
-    Calling TO8BIT on an 8-bit image has no effect; the contrast is not
-    stretched in that case.
+    Alternatively, STRETCH can be a dict mapping source percentiles to
+    8-bit values. For instance, STRETCH = { 50: 130, 75: 172 } means
+    that the 50th percentile of the 16-bit image gets mapped to 8-bit
+    value 130 and the 75th percentile to 172. Precisely two percentiles
+    must be specified in this case.
     If optional argument IGNORETHR is given, pixels blacker than that
     value are ignored in the histogram calculation. Furthermore, if SUBST
-    is given, those ignored pixels are assigned output value SUBST.'''
+    is given, those ignored pixels are assigned output value SUBST.
+    Calling TO8BIT on an 8-bit image has no effect; the contrast is not
+    stretched in that case and substitutions are not applied.'''
     if img.dtype==np.uint8:
         return img
     elif img.dtype==np.uint16:
@@ -110,17 +115,27 @@ def to8bit(img, stretch=.1, ignorethr=None, subst=None):
             hst = cv2.calcHist([img[img>=ignorethr]], [0], None, [65536],
                                [0, 65536])
         hst = np.cumsum(hst)
-        hst = hst / hst[-1]
-        lowb = np.argmax(hst>=.01*stretch)
-        upb = np.argmax(hst>=1-.01*stretch)
-
-        def mklut(lowb, upb):
-            lut = np.arange(65536)
-            lut.clip(lowb, upb, out=lut)
-            lut -= lowb
-            np.floor_divide(lut, (upb-lowb+1) / 256, out=lut, casting='unsafe')
-            return lut.astype(np.uint8)
-        res = mklut(lowb, upb)[img]
+        scl = hst[-1]
+        if type(stretch)==dict:
+            if len(stretch)!=2:
+                raise ValueError('Must have exactly two percentiles')
+            kk = list(stretch.keys())
+            kk.sort()
+            p1 = np.searchsorted(hst, .01*kk[0]*scl)
+            p2 = np.searchsorted(hst, .01*kk[1]*scl)
+            v1 = stretch[kk[0]]
+            v2 = stretch[kk[1]]
+        else:
+            p1 = np.searchsorted(hst, .01*stretch*scl)
+            p2 = np.searchsorted(hst, (1-.01*stretch)*scl)
+            v1 = 0
+            v2 = 256
+        lut = np.arange(65536)
+        lut = v1 + (v2-v1) * (lut - p1) / (1 + p2 - p1)
+        lut[lut<0] = 0
+        lut[lut>255] = 255
+        lut = lut.astype(np.uint8)
+        res = lut[img]
         if subst is not None:
             res[img<ignorethr] = subst
         return res
