@@ -143,7 +143,7 @@ def infofile():
     return txt
 
 if __name__ == '__main__':
-
+    maketable()
     for a,b in scales:
         allcombine(a, b)
     
