@@ -18,9 +18,9 @@ def abpath(a, b, z=None, y=None, x=None):
         zlo = z % 100
         zhi = z // 100
         pth += f'/Z{zhi}/{zlo}'
-        if not y is None:
+        if y is not None:
             pth += f'/Y{y}'
-            if not x is None:
+            if x is not None:
                 pth += f'/X{x}.jpg'
     #print(pth)
     return pth
@@ -99,6 +99,50 @@ def allcombine(a, b):
         fac.shutdown()
         guard.touch()
 
-for a,b in scales:
-    allcombine(a, b)
+def infofile():
+    txt = '''{
+    "type": "image",
+    "data_type": "uint8",
+    "num_channels": 1,
+    "scales": ['''
+
+    X = 36864
+    Y = 117248
+    Z = 9604
+    dx = 5.5
+    dz = 50
+    sep = ""
+
+    B = 0
+    for A in range(9):
+        txt += sep
+        txt += f'''
+        {{
+        "key": "pub/{A}-{B}",
+        "size": [{X},{Y},{Z}],
+        "resolution": [{dx}, {dx}, {dz}],
+        "voxel_offset": [0,0,0],
+        "chunk_sizes": [[512,512,1]],
+        "encoding": "jpeg"
+        }}'''
+
+    sep = ","
+    X = (X+511)//2
+    Y = (Y+511)//2
+    dx *= 2
+    if dx>dz:
+        dz *= 2
+        B += 1
+        Z = (Z+1)//2
+    txt += "\n    ]\n";
+    txt += "}\n";
+    return txt
+
+if __name__ == '__main__':
+
+    for a,b in scales:
+        allcombine(a, b)
+    
+    with open(f'{root}/ng-info.txt', 'w') as f:
+        f.write(infofile())
     
