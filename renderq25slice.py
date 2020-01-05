@@ -10,6 +10,7 @@ import rawimage
 import pyqplot as qp
 import factory
 import cv2
+import config
 
 X = Y = 684*5 # Full tile size in q5 space!
 
@@ -79,7 +80,7 @@ qp.imsc(img)
 '''
 
 def perhapsrender(r, s):
-    ofn = f'/lsi2/dw/170428/slicesq25/R{r}S{s}.jpg'
+    ofn = f'{config.sclroot}/slicesq25/R{r}S{s}.jpg'
     if os.path.exists(ofn):
         return
     print(f'Rendering R{r} S{s}')

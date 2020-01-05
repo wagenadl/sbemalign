@@ -9,9 +9,10 @@ import os
 import rawimage
 import warp
 import sys
+import config
 
 tbl = 'renderq5elasticdone'
-odir = '/lsi2/dw/170428/q5elastic'
+odir = f'{config.sclroot}/q5elastic'
 
 db = aligndb.DB()
 ri = db.runinfo()

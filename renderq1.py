@@ -9,9 +9,10 @@ import os
 import rawimage
 import warp
 import sys
+import config
 
 tbl = 'renderq1done'
-odir = '/lsi2/dw/170428/q1pyramid'
+odir = f'{config.sclroot}/q1pyramid'
 
 
 db = aligndb.DB()
