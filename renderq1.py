@@ -45,7 +45,9 @@ def render(z):
     for m in range(M):
         print(f'Loading Z{z} M{m}')
         #tile = rawimage.fullq1img(r, m, s, stretch=2.0)
-        tile = rawimage.fullq1img(r, m, s, stretch={50: 130, 75: 172})
+        tile = rawimage.fullq1img(r, m, s, 
+                                  stretch={50: 130, 75: 172},
+                                  ignorethr=5000)
         if tile is None:
             print(f'Not rendering Z{z} M{m} - No image')
             continue
