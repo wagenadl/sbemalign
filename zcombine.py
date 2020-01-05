@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
-root = '/lsi2/dw/170428/q1pyramid'
+import config
+
+root = f'{config.sclroot}/q1pyramid'
 
 scales = [ (4,1), (5,2), (6,3), (7,4), (8,5) ] # (A,B) pairs
 

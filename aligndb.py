@@ -6,7 +6,6 @@ class DB:
         if 'host' not in kwargs:
             kwargs['host'] = 'localhost'
         self.db = psycopg2.connect(database='align170428', **kwargs)
-        self.X, self.Y, self.root = self.sel('select X,Y,root from info')[0]
 
     def exe(self, sql, args=None):
         '''EXE - Execute a single SQL statement in its own transaction'''
@@ -54,35 +53,6 @@ class DB:
                 ar[r] = raw[r][c]
             res.append(ar)
         return res
-   
-    def globaltotile(self, r, m, s, stage):
-        '''GLOBALTOTILE - Return transformation matrix for given tile.
-        t = GLOBALTOTILE(r, m, s, stage) returns a 3x3 affine matrix
-        transforming global coordinates to pixel coordinates in the tile
-        specified by (R, M, S) at the given processing stage. Processing
-        stages are:
-          BETA - Use only the translation from the BETAPOS table.
-          UCT - Use the additional shift from the UCTSHIFT table.
-        More stages will be defined as I progress.
-        If you need the inverse transform, simply use np.linalg.inv.'''
-        stage = stage.lower()
-        t = np.eye(3)
-        if stage=='beta':
-            x, y = self.sel('''select xc, yc from betapos
-                       where r=%s and m=%s and s=%s''', (r,m,s))[0]
-            t[0,2] = X/2 - x
-            t[1,2] = Y/2 - y
-            return t
-        elif stage=='uct':
-            x, y = self.sel('''select xc, yc from betapos
-                       where r=%s and m=%s and s=%s''', (r,m,s))[0]
-            dx, dy = self.sel('''select dx, dy from uctshift
-                       where r=%s and m=%s and s=%s''', (r,m,s))[0]
-            t[0,2] = X/2 - x - dx
-            t[1,2] = Y/2 - y - dy
-            return t
-        else:
-            raise ValueError(f'Unknown stage: {stage}')
 
     class Runlet:
         def __init__(self, r, s0, s1):
@@ -91,6 +61,7 @@ class DB:
             self.s1 = s1
         def __repr__(self):
             return f'Runlet(R{self.r} [{self.s0},{self.s1})'
+
     class RI:
         def nruns(self):
             return self.R
@@ -162,6 +133,7 @@ class DB:
                     s1a = self.nslices(r)
                 rl.append(DB.Runlet(r, s0a, s1a))
             return rl
+
     def runinfo(self):
         ri = self.sel('select r,M,S,z0 from runs')
         res = DB.RI()

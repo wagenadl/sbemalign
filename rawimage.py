@@ -5,7 +5,6 @@ import cv2
 import config
 import re
 import os
-#import skimage.io
 
 def rawtile(r, m, s):
     '''RAWTILE - Filename for raw image
@@ -13,26 +12,7 @@ def rawtile(r, m, s):
     run/montage/slice.
     img = LOADIMAGE(RAWTILE(r, m, s)) returns the actual image as a
     16-bit 17100x17100-pixel image.'''
-    root = config.rawroot
-    if r==40 and s<143:
-        pat = '%s/Run%i/Montage_%03i/Prefix_OnPoint_%04i.tif'
-        return pat % (root, r, m, s)
-    if r==11:
-        pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_OnPoint_%04i.tif'
-    else:
-        pat = '%s/Run%i/Montage_%03i/Run%i_OnPoint_%04i.tif'
-    return pat % (root, r, m, r, s)
-
-def rawsubtile(r, m, s, ix, iy):
-    '''RAWSUBTILE - Filename for subtile out of raw image
-    fn = RAWSUBTILE(r, m, s, ix, iy) returns the path of a tiff subtile
-    out of the raw data (at full scale). There are 33x33 subtiles for
-    each tile, numbered 0..32 (inclusive). Each is 512x512 pixels wide.
-    This means that at each of the four edges of a raw image, 102
-    pixels are not incorporated in the subtiles.'''
-    dr = config.oldroot + f'/unaligned/R{r:03d}/M{m:03d}/S{s:04d}'
-    fn = f'X{ix:02d}Y{iy:02d}.tif'
-    return f'{dr}/{fn}'
+    return config.rawtile(r, m, s)
 
 def scaledtile(r, m, s, q):
     '''SCALEDTILE - Filename for scaled raw image
@@ -41,16 +21,14 @@ def scaledtile(r, m, s, q):
     If Q is 1, returns RAWTILE filename.'''
     if q==1:
         return rawtile(r, m, s)
-    root = config.sclroot
-    pat = '%s/scaled/Q%i/R%i/M%i/S%i.tif'
-    return pat % (root, q, r, m, s)
+    return f'{config.sclroot}/scaled/Q{q}/R{r}/M{m}/S{s}.tif'
 
 def partialq5tile(r, m, s, ix, iy):
     '''PARTIALQ5TILE - Filename for scaled raw subtile
     fn = PARTIALQ5TILE(r, m, s, ix, iy) returns the path of the scaled raw 
     subtile image (ix, iy) of run/montage/slice. IX and IY run from 0
     to 4 inclusive.'''
-    return f'/lsi2/dw/170428/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
+    return f'{config.sclroot}/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
 
 def loadimage(url):
     '''LOADIMAGE - Download an image from anywhere
@@ -196,61 +174,6 @@ def betaimg(z, a=6):
     url = f'http://leechem.caltech.edu:9090/roi_pix/z{z}/x{x0}/y{y0}/w{w}/h{h}/a{a}.jpg'
     print(x0, y0, w, h, url)
     return loadimage(url)
-
-def q1subimg(r, m, s, ix, iy):
-    return loadlocaltif(rawsubtile(r, m, s, ix, iy))
-
-def q1subimg2x2(r, m, s, ix, iy):
-    img = np.zeros((1024, 1024), dtype=np.uint8)
-    img[:512,:512] = q1subimg(r,m,s,ix-1,iy-1)
-    img[:512,512:] = q1subimg(r,m,s,ix,iy-1)
-    img[512:,:512] = q1subimg(r,m,s,ix-1,iy)
-    img[512:,512:] = q1subimg(r,m,s,ix,iy)
-    return img
-
-def q1roi(r, m, s, x, y, w, h):
-    '''Q1ROI - Load an arbitrary rectangular patch from a raw tile
-    img = Q1ROI(r, m, s, x, y, w, h) loads an WxH-sized image patch
-    from the "unaligned" tiles with top-left at (X,Y). Note that this
-    corresponds to (X+102, Y+102) in the 16-bit raw tiffs.'''
-    print('q1roi', r, m, s, x, y, w, h)
-    R = 512
-    x0 = x // R # Leftmost column to read, inclusive
-    x1 = (x+w+R-1) // R # Rightmost column to read, exclusive
-    y0 = y // R
-    y1 = (y+h+R-1) // R
-    dx = x - R*x0
-    dy = y - R*y0
-    img = np.zeros((h,w), dtype=np.uint8)
-    Y0 = 0
-    for iy in range(y0, y1):
-        yidx = slice(0, R)
-        if iy==y0:
-            yidx = slice(dy, R)
-        elif iy==y1-1 and dy>0:
-            yidx = slice(0, dy)
-        X0 = 0
-        for ix in range(x0, x1):
-            xidx = slice(0, R)
-            if ix==x0:
-                xidx = slice(dx, R)
-            elif ix==x1-1 and dx>0:
-                xidx = slice(0, dx)
-            sub = q1subimg(r, m, s, ix, iy)
-            sh,sw = sub.shape
-            if sh!=R or sw!=R:
-                 raise Exception(f'Wrong size subimg R{r} M{m} S{s} {ix},{iy}')
-            sub = sub[yidx, xidx]
-            H,W = sub.shape
-            if X0+W > w:
-                 raise Exception(f'Bug X0+W>w at R{r} M{m} S{s} {ix},{iy}')
-            if Y0+H > h:
-                 raise Exception(f'Bug Y0+H>h at R{r} M{m} S{s} {ix},{iy}')
-            img[Y0:Y0+H, X0:X0+W] = sub
-            X0 += W
-        Y0 += H
-    print('q1roi done', r, m, s, x, y, w, h)
-    return img
 
 def partialq5img(r, m, s, ix, iy):
     return loadimage(partialq5tile(r, m, s, ix, iy))

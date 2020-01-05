@@ -9,6 +9,7 @@ import pyqplot as qp
 import factory
 import swiftir
 import cv2
+import config
 
 monttbl = 'solveq5mont'
 rigidtbl = 'solveq5rigidtile'
@@ -141,7 +142,7 @@ if s is None:
    fac = factory.Factory(12)
 
 def rendersvslice(z0, r, s):
-    odir = f'/lsi2/dw/170428/rigidq5/Z{z0}'
+    odir = f'{config.sclroot}/rigidq5/Z{z0}'
     if not os.path.exists(odir):
         os.mkdir(odir)
     ofn = odir + f'/R{r}S{s}.jpg'

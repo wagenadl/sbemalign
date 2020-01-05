@@ -4,9 +4,10 @@ import factory
 import rawimage
 import pathlib
 import numpy as np
+import config
 
 def abpath(a, b, z, y=None, x=None):
-    root = '/lsi2/dw/170428/q1pyramid'
+    root = f'{config.sclroot}/q1pyramid'
     zlo = z % 100
     zhi = z // 100
     zbit = f'Z{zhi}/{zlo}'
@@ -23,7 +24,7 @@ def abpath(a, b, z, y=None, x=None):
     return pth
 
 def outpath(a, b, z, y=None, x=None):
-    root = '/lsi2/dw/170428/q1chunks'
+    root = f'{config.sclroot}/q1chunks'
     pth = f'{root}/A{a}B{b}/Z{z}'
     if y is not None:
         pth += f'/Y{y}'

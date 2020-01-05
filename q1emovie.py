@@ -6,6 +6,7 @@ import os
 import factory
 import numpy as np
 import renderq5utils
+import config
 
 gbb = renderq5utils.globalbbox()
 Q = 5
@@ -15,9 +16,9 @@ R = 512 # tile size
 X0 = fullwidth//R//2
 Y0 = fullheight//R//2
 
-idir = '/lsi2/dw/170428/q1pyramid'
-fdir = '/home/wagenaar/q1eframes'
-ovfn = '/lsi2/dw/170428/q1emovie.mp4'
+idir = '{config.sclroot}/q1pyramid'
+fdir = '{config.tmproot}/q1eframes'
+ovfn = '{config.sclroot}/q1emovie.mp4'
 
 def makeframe(z, ofn):
     print(f'Processing Z{z}')

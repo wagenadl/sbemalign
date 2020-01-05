@@ -4,10 +4,11 @@ import cv2
 import rawimage
 import os
 import factory
+import config
 
-idir = '/lsi2/dw/170428/q100elastic'
-fdir = '/home/wagenaar/q100eframes'
-ovfn = '/lsi2/dw/170428/q100emovie.mp4'
+idir = f'{config.sclroot}/q100elastic'
+fdir = f'{config.tmproot}/q100eframes'
+ovfn = f'{config.sclroot}/q100emovie.mp4'
 
 def makeframe(z, ifn, ofn):
     print(f'Processing Z{z}')
