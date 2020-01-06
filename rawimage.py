@@ -21,14 +21,14 @@ def scaledtile(r, m, s, q):
     If Q is 1, returns RAWTILE filename.'''
     if q==1:
         return rawtile(r, m, s)
-    return f'{config.sclroot}/scaled/Q{q}/R{r}/M{m}/S{s}.tif'
+    return f'{config.root}/scaled/Q{q}/R{r}/M{m}/S{s}.tif'
 
 def partialq5tile(r, m, s, ix, iy):
     '''PARTIALQ5TILE - Filename for scaled raw subtile
     fn = PARTIALQ5TILE(r, m, s, ix, iy) returns the path of the scaled raw 
     subtile image (ix, iy) of run/montage/slice. IX and IY run from 0
     to 4 inclusive.'''
-    return f'{config.sclroot}/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
+    return f'{config.root}/scaled/Q5/R{r}/M{m}/S{s}.{ix}{iy}.tif'
 
 def loadimage(url):
     '''LOADIMAGE - Download an image from anywhere

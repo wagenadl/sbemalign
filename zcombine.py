@@ -2,7 +2,7 @@
 
 import config
 
-root = f'{config.sclroot}/q1pyramid'
+root = f'{config.root}/q1pyramid'
 
 scales = [ (4,1), (5,2), (6,3), (7,4), (8,5) ] # (A,B) pairs
 

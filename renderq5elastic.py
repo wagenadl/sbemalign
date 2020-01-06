@@ -12,7 +12,7 @@ import sys
 import config
 
 tbl = 'renderq5elasticdone'
-odir = f'{config.sclroot}/q5elastic'
+odir = f'{config.root}/q5elastic'
 
 db = aligndb.DB()
 ri = db.runinfo()

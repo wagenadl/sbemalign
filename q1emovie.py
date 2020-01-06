@@ -16,9 +16,9 @@ R = 512 # tile size
 X0 = fullwidth//R//2
 Y0 = fullheight//R//2
 
-idir = '{config.sclroot}/q1pyramid'
+idir = '{config.root}/q1pyramid'
 fdir = '{config.tmproot}/q1eframes'
-ovfn = '{config.sclroot}/q1emovie.mp4'
+ovfn = '{config.root}/q1emovie.mp4'
 
 def makeframe(z, ofn):
     print(f'Processing Z{z}')

@@ -142,7 +142,7 @@ if s is None:
    fac = factory.Factory(12)
 
 def rendersvslice(z0, r, s):
-    odir = f'{config.sclroot}/rigidq5/Z{z0}'
+    odir = f'{config.root}/rigidq5/Z{z0}'
     if not os.path.exists(odir):
         os.mkdir(odir)
     ofn = odir + f'/R{r}S{s}.jpg'

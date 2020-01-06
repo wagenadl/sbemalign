@@ -4,8 +4,12 @@ import numpy as np
 class DB:
     def __init__(self, **kwargs):
         if 'host' not in kwargs:
-            kwargs['host'] = 'localhost'
-        self.db = psycopg2.connect(database='align170428', **kwargs)
+            kwargs['host'] = config.dbhost
+        if 'user' not in kwargs:
+            kwargs['user'] = config.dbuser
+        if 'database' not in kwargs:
+            kwargs['database'] = config.database
+        self.db = psycopg2.connect(**kwargs)
 
     def exe(self, sql, args=None):
         '''EXE - Execute a single SQL statement in its own transaction'''
@@ -64,43 +68,92 @@ class DB:
 
     class RI:
         def nruns(self):
+            '''NRUNS - Number of runs in the acquisition series
+            NRUNS() returns the number of runs in the acquisition series.'''
             return self.R
+
         def nslices(self, r):
+            '''NSLICES - Number of slices in a run
+            NSLICES(r) returns the number of slices in given run.
+            Note that runs count from one but slices within a run count from
+            zero.'''
             return self.SS[r]
+
         def nmontages(self, r):
+            '''NMONTAGES - Number of montages in a run
+            NMONTAGES(r) returns the number of montages in given run.
+            Note that runs count from one but montages within a run count from
+            zero.'''
             return self.MM[r]
+
         def z0(self, r):
+            '''Z0 - Z-coordinate of start of run
+            Z0(r) returns the z-coordinate of the first slice of the given run.
+            By definition, run one starts at z0 = 0.'''
             return self.zz0[r]
+
         def z(self, r, s):
+            '''Z - Z-coordinate of a slice
+            Z0(r, s) returns the z-coordinates of the given slice of the given
+            run.'''
             z0 = self.zz0[r]
             return z0 + s
+
         def ncolumns(self, r):
-            if self.MM[r]<=3 or r>=51:
-                return 1
-            else:
-                return 2
+            '''NCOLUMNS - Number of columns in a run
+            NCOLUMNS(r) returns the number of columns in the given run.
+            We use the config.py file to get this information.'''
+            return config.ncolums(r)
+
         def nrows(self, r):
+            '''NROWS - Number of rows in a run
+            NROWS(r) returns the number of rows in the given run.
+            Automatically determined from the number of columns.'''
             return self.nmontages(r) // self.ncolumns(r)
+
         def m2c(self, r, m):
+            '''M2C - Get column number for a montage
+            M2C(r, m) returns the column number for montage M in run R.'''
             return m % self.ncolumns(r)
+
         def m2r(self, r, m):
+            '''M2C - Get row number for a montage
+            M2C(r, m) returns the row number for montage M in run R.'''
             return m // self.ncolumns(r)
+
         def mright(self, r, m):
+            '''MRIGHT - Find montage to the right of another
+            MRIGHT(r, m) finds the montage number to the right of montage M
+            in run R, or None if there is none.'''
             if self.m2c(r, m) < self.ncolumns(r)-1:
                 return m+1
             else:
                 return None
+
         def mleft(self, r, m):
+            '''MLEFT - Find montage to the left of another
+            MLEFT(r, m) finds the montage number to the left of montage M
+            in run R, or None if there is none.'''
             if self.m2c(r, m) > 0:
                 return m-1
             else:
                 return None
+
         def mabove(self, r, m):
+            '''MABOVE - Find montage above another
+            MABOVE(r, m) finds the montage number above montage M
+            in run R, or None if there is none. (Above means: in the
+            negative y-direction.)'''
             if self.m2r(r, m) > 0:
                 return m-self.ncolumns(r)
             else:
                 return None
+
         def mbelow(self, r, m):
+            '''MBELOW - Find montage below another
+            MBELOW(r, m) finds the montage number below montage M
+            in run R, or None if there is none. (Below means: in the
+            positive y-direction.)'''
             if self.m2r(r, m) < self.nrows(r)-1:
                 return m+self.ncolumns(r)
             else:
@@ -114,6 +167,7 @@ class DB:
                 if z>=z0 and z<z0+self.SS[r]:
                     return (r, z-z0)
             return (None, None)
+
         def subvolume(self, z0, nz):
             '''Returns a list of runlets, spanning the given Z range'''
             rl = []

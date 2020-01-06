@@ -44,11 +44,11 @@ def interrun(r2):
     s1 = ri.nslices(r1)-1
     if r1==35:
       s1 -= 1 
-    img1 = rawimage.loadimage(f'{config.sclroot}/slicesq25/R{r1}S{s1}.jpg')
+    img1 = rawimage.loadimage(f'{config.root}/slicesq25/R{r1}S{s1}.jpg')
     if img1 is None:
         raise Exception(f'Failed to read last image for R{r1}')
         
-    img2 = rawimage.loadimage(f'{config.sclroot}/slicesq25/R{r2}S0.jpg')
+    img2 = rawimage.loadimage(f'{config.root}/slicesq25/R{r2}S0.jpg')
     if img2 is None:
         raise Exception(f'Failed to read first image for R{r2}')
 

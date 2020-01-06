@@ -6,9 +6,9 @@ import os
 import factory
 import config
 
-idir = f'{config.sclroot}/q100elastic'
+idir = f'{config.root}/q100elastic'
 fdir = f'{config.tmproot}/q100eframes'
-ovfn = f'{config.sclroot}/q100emovie.mp4'
+ovfn = f'{config.root}/q100emovie.mp4'
 
 def makeframe(z, ifn, ofn):
     print(f'Processing Z{z}')

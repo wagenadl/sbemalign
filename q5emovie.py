@@ -7,7 +7,7 @@ import factory
 import config
 
 fdir = '{config.tmproot}/q5eframes'
-ovfn = '{config.sclroot}/q5emovie.mp4'
+ovfn = '{config.root}/q5emovie.mp4'
 
 def makeframe(z, ifn, ofn):
     print(f'Processing Z{z}')
@@ -27,7 +27,7 @@ def makeframe(z, ifn, ofn):
 def perhapsmakeframe(z, ofn):
     z1 = z//100
     z2 = z%100
-    ifn = f'{config.sclroot}/q5elastic/Z{z1}/{z2}.jpg'
+    ifn = f'{config.root}/q5elastic/Z{z1}/{z2}.jpg'
     if os.path.exists(ofn):
         if os.path.getmtime(ofn) > os.path.getmtime(ifn):
             return

@@ -1,5 +1,13 @@
-The realignment process
-=======================
+The SBEMALign Alignment Process
+=====================
+
+Introduction
+------------
+
+Alignment refers to the task of taking individual images from an SBEM
+data acquisition volume, determining their relative positions in
+space, and creating a unified 3D volume combining all the images.
+SBEMAlign includes the ability to (gently) warp images to obtain a better fit.
 
 Terminology
 -----------
@@ -43,6 +51,44 @@ Tile space
 : coordinate space for a tile; defined relative to the enclosing
 montage by way of a grid of matching points that define subtiles
 
+
+Creating the database
+---------------------
+
+SBEMAlign stores information in a PostgreSQL database. If you are using Ubuntu Linux, installing PostgreSQL is as easy as
+
+    sudo apt install postgresql
+
+You then need to create a database and give yourself access to it. Typically, this involves something like:
+
+    psql
+    => CREATE TABLE align170428;
+    => GRANT ALL PRIVILEGES ON DATABASE align170428 TO wagenaar;
+
+where I assumed that you call your database “align170428” and that your username 
+is “wagenaar”. You may first have to create that user in PostgreSQL. There are 
+lots of tutorials on the web to help you with these steps.
+
+Importing basic information about your project
+------------------------------------
+
+To use the tools, you first need to edit the “config.py” file to suit
+your needs. In particular, you need to define where files are stored and what 
+database to use.
+
+Most likely, you will need to change all the pathnames near the top of the file.
+You will
+also need to change the name of the database and database user.
+
+Next, you need to edit the function “rawtile” to match the file naming convention of your microscope. If you look at my version, you will see that our convention is rather curious and not always consistent. Hence the flexibility of a function.
+
+Finally, you need to specify the number of columns in each run of the microscope. SBEMAlign assumes that each run involved a simple grid of images organized into columns and rows. If you specify the number of columns, it will figure out the number of rows automatically.
+
+When you are done with the “config.py” file, you can run “inferruns.py” to let the software figure out how many montages and slices there are in each of your runs. It is
+well worth checking that the output of this program matches your expectations. If it
+gets things wrong, nothing else is going to work. Most likely, you can fix problems
+by adjusting the “rawtile” function in “config.py” and rerunning “inferruns.py.”
+
 Currently meaningful programs and tables
 ----------------------------------------
 
@@ -71,10 +117,13 @@ Solved elastic shifts inside tiles
 
 z0
 : subvolume ID
+
 r, m, s
 : run-montage-slice for a tile
+
 x, y
 : coordinates of test point relative to subvolume
+
 dx, dy
 : shift for that test point
 
@@ -85,8 +134,10 @@ Solved rigid positions of tiles in a subvolume.
 #### Members
 z0
 : subvolume ID
+
 r, m, s
 : run-montage-slice for a tile
+
 x, y
 : position of that tile relative to (r, m) position from solveq5mont
 
@@ -98,8 +149,10 @@ Solved positions of montages in a subvolume.
 
 z0
 : subvolume ID
+
 r, m
 : run and montage
+
 x, y
 : position of topleft corner of the montage relative to the subvolume
 
@@ -116,14 +169,19 @@ is matched to
 
 r, m, s
 : Primary tile
+
 ix, iy
 : Subtile position in primary tile
+
 r2, m2, s2
 : Secondary tile
+
 x, y
 : Base position in secondary tile
+
 dx, dy, sx, sy, snr
 : Results of first SWIM
+
 dxb, dyb, sxb, syb, snrb
 : Results of second SWIM
 

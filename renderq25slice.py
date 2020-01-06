@@ -80,7 +80,7 @@ qp.imsc(img)
 '''
 
 def perhapsrender(r, s):
-    ofn = f'{config.sclroot}/slicesq25/R{r}S{s}.jpg'
+    ofn = f'{config.root}/slicesq25/R{r}S{s}.jpg'
     if os.path.exists(ofn):
         return
     print(f'Rendering R{r} S{s}')

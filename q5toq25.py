@@ -11,11 +11,11 @@ fac = factory.Factory(20)
 def ifile(z):
     z1 = z//100
     z2 = z%100
-    return f'{config.sclroot}/q5elastic/Z{z1}/{z2}.jpg'
+    return f'{config.root}/q5elastic/Z{z1}/{z2}.jpg'
 
 
 def odir(z=None):
-    od = f'{config.sclroot}/q25elastic'
+    od = f'{config.root}/q25elastic'
     if z is None:
         return od
     else:

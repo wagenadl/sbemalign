@@ -12,7 +12,7 @@ import sys
 import config
 
 tbl = 'renderq1done'
-odir = f'{config.sclroot}/q1pyramid'
+odir = f'{config.root}/q1pyramid'
 
 
 db = aligndb.DB()
